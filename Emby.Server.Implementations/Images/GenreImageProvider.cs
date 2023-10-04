@@ -19,14 +19,17 @@ namespace Emby.Server.Implementations.Images
     /// </summary>
     public class GenreImageProvider : BaseDynamicImageProvider<Genre>
     {
-        /// <summary>
-        /// The library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
-        public GenreImageProvider(IFileSystem fileSystem, IProviderManager providerManager, IApplicationPaths applicationPaths, IImageProcessor imageProcessor, ILibraryManager libraryManager) : base(fileSystem, providerManager, applicationPaths, imageProcessor)
+        public GenreImageProvider(
+            IFileSystem fileSystem,
+            IProviderManager providerManager,
+            IApplicationPaths applicationPaths,
+            IImageProcessor imageProcessor,
+            IItemService itemService)
+            : base(fileSystem, providerManager, applicationPaths, imageProcessor)
         {
-            _libraryManager = libraryManager;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -36,7 +39,7 @@ namespace Emby.Server.Implementations.Images
         /// <returns>Any relevant children objects.</returns>
         protected override IReadOnlyList<BaseItem> GetItemsWithImages(BaseItem item)
         {
-            return _libraryManager.GetItemList(new InternalItemsQuery
+            return _itemService.GetItemList(new InternalItemsQuery
             {
                 Genres = new[] { item.Name },
                 IncludeItemTypes = new[] { BaseItemKind.Series, BaseItemKind.Movie },

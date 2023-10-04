@@ -6,6 +6,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Playlists;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Server.Migrations.Routines;
@@ -16,17 +17,17 @@ namespace Jellyfin.Server.Migrations.Routines;
 internal class FixPlaylistOwner : IMigrationRoutine
 {
     private readonly ILogger<RemoveDuplicateExtras> _logger;
-    private readonly ILibraryManager _libraryManager;
     private readonly IPlaylistManager _playlistManager;
+    private readonly IItemService _itemService;
 
     public FixPlaylistOwner(
         ILogger<RemoveDuplicateExtras> logger,
-        ILibraryManager libraryManager,
-        IPlaylistManager playlistManager)
+        IPlaylistManager playlistManager,
+        IItemService itemService)
     {
         _logger = logger;
-        _libraryManager = libraryManager;
         _playlistManager = playlistManager;
+        _itemService = itemService;
     }
 
     /// <inheritdoc/>
@@ -41,7 +42,7 @@ internal class FixPlaylistOwner : IMigrationRoutine
     /// <inheritdoc/>
     public void Perform()
     {
-        var playlists = _libraryManager.GetItemList(new InternalItemsQuery
+        var playlists = _itemService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Playlist }
         })

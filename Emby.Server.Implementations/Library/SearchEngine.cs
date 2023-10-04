@@ -18,13 +18,13 @@ namespace Emby.Server.Implementations.Library
 {
     public class SearchEngine : ISearchEngine
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly IUserManager _userManager;
+        private readonly IItemService _itemService;
 
-        public SearchEngine(ILibraryManager libraryManager, IUserManager userManager)
+        public SearchEngine(IUserManager userManager, IItemService itemService)
         {
-            _libraryManager = libraryManager;
             _userManager = userManager;
+            _itemService = itemService;
         }
 
         public QueryResult<SearchHintInfo> GetSearchHints(SearchQuery query)
@@ -185,11 +185,11 @@ namespace Emby.Server.Implementations.Library
 
                 searchQuery.IncludeItemsByName = true;
                 searchQuery.IncludeItemTypes = Array.Empty<BaseItemKind>();
-                mediaItems = _libraryManager.GetAllArtists(searchQuery).Items.Select(i => i.Item).ToList();
+                mediaItems = _itemService.GetAllArtists(searchQuery).Items.Select(i => i.Item).ToList();
             }
             else
             {
-                mediaItems = _libraryManager.GetItemList(searchQuery);
+                mediaItems = _itemService.GetItemList(searchQuery);
             }
 
             return mediaItems.Select(i => new SearchHintInfo

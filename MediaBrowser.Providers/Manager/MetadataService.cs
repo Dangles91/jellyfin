@@ -27,15 +27,24 @@ namespace MediaBrowser.Providers.Manager
         where TItemType : BaseItem, IHasLookupInfo<TIdType>, new()
         where TIdType : ItemLookupInfo, new()
     {
-        protected MetadataService(IServerConfigurationManager serverConfigurationManager, ILogger<MetadataService<TItemType, TIdType>> logger, IProviderManager providerManager, IFileSystem fileSystem, ILibraryManager libraryManager)
+        protected MetadataService(
+            IServerConfigurationManager serverConfigurationManager,
+            ILogger<MetadataService<TItemType, TIdType>> logger,
+            IProviderManager providerManager,
+            IFileSystem fileSystem,
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             ServerConfigurationManager = serverConfigurationManager;
             Logger = logger;
             ProviderManager = providerManager;
             FileSystem = fileSystem;
             LibraryManager = libraryManager;
+            LibraryOptionsManager = libraryOptionsManager;
             ImageProvider = new ItemImageProvider(Logger, ProviderManager, FileSystem);
         }
+
+        protected ILibraryOptionsManager LibraryOptionsManager { get; }
 
         protected ItemImageProvider ImageProvider { get; }
 
@@ -78,7 +87,7 @@ namespace MediaBrowser.Providers.Manager
 
             var updateType = ItemUpdateType.None;
 
-            var libraryOptions = LibraryManager.GetLibraryOptions(item);
+            var libraryOptions = LibraryOptionsManager.GetLibraryOptions(item);
 
             var requiresRefresh = libraryOptions.AutomaticRefreshIntervalDays > 0 && (DateTime.UtcNow - item.DateLastRefreshed).TotalDays >= libraryOptions.AutomaticRefreshIntervalDays;
 

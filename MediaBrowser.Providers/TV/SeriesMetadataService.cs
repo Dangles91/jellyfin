@@ -22,6 +22,7 @@ namespace MediaBrowser.Providers.TV
     public class SeriesMetadataService : MetadataService<Series, SeriesInfo>
     {
         private readonly ILocalizationManager _localizationManager;
+        private readonly IItemService _itemService;
 
         public SeriesMetadataService(
             IServerConfigurationManager serverConfigurationManager,
@@ -29,10 +30,13 @@ namespace MediaBrowser.Providers.TV
             IProviderManager providerManager,
             IFileSystem fileSystem,
             ILibraryManager libraryManager,
-            ILocalizationManager localizationManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager)
+            ILocalizationManager localizationManager,
+            ILibraryOptionsManager libraryOptionsManager,
+            IItemService itemService)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
             _localizationManager = localizationManager;
+            _itemService = itemService;
         }
 
         /// <inheritdoc />
@@ -125,13 +129,12 @@ namespace MediaBrowser.Providers.TV
                 {
                     Logger.LogInformation("Removing virtual season {SeasonNumber} in series {SeriesName}", virtualSeason.IndexNumber, series.Name);
 
-                    LibraryManager.DeleteItem(
+                    _itemService.DeleteItem(
                         virtualSeason,
                         new DeleteOptions
                         {
                             DeleteFileLocation = true
-                        },
-                        false);
+                        });
                 }
             }
         }
@@ -182,13 +185,12 @@ namespace MediaBrowser.Providers.TV
                 episode.IndexNumber,
                 episode.SeriesName);
 
-            LibraryManager.DeleteItem(
+            _itemService.DeleteItem(
                 episode,
                 new DeleteOptions
                 {
                     DeleteFileLocation = true
-                },
-                false);
+                });
         }
 
         /// <summary>
@@ -275,7 +277,7 @@ namespace MediaBrowser.Providers.TV
                 seasonName = seasonNumber switch
                 {
                     null => _localizationManager.GetLocalizedString("NameSeasonUnknown"),
-                    0 => LibraryManager.GetLibraryOptions(series).SeasonZeroDisplayName,
+                    0 => LibraryOptionsManager.GetLibraryOptions(series).SeasonZeroDisplayName,
                     _ => string.Format(CultureInfo.InvariantCulture, _localizationManager.GetLocalizedString("NameSeasonNumber"), seasonNumber.Value)
                 };
             }

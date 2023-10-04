@@ -23,22 +23,22 @@ public class SuggestionsController : BaseJellyfinApiController
 {
     private readonly IDtoService _dtoService;
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SuggestionsController"/> class.
     /// </summary>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public SuggestionsController(
         IDtoService dtoService,
         IUserManager userManager,
-        ILibraryManager libraryManager)
+        IItemService itemService)
     {
         _dtoService = dtoService;
         _userManager = userManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public class SuggestionsController : BaseJellyfinApiController
             : _userManager.GetUserById(userId);
 
         var dtoOptions = new DtoOptions().AddClientFields(User);
-        var result = _libraryManager.GetItemsResult(new InternalItemsQuery(user)
+        var result = _itemService.GetItemsResult(new InternalItemsQuery(user)
         {
             OrderBy = new[] { (ItemSortBy.Random, SortOrder.Descending) },
             MediaTypes = mediaType,

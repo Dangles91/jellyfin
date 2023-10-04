@@ -79,7 +79,7 @@ namespace MediaBrowser.Controller.Channels
 
         internal static bool IsChannelVisible(BaseItem channelItem, User user)
         {
-            var channel = ChannelManager.GetChannel(channelItem.ChannelId.ToString(string.Empty));
+            var channel = ChannelManager.GetChannel(channelItem.ChannelId);
 
             return channel.IsVisible(user);
         }

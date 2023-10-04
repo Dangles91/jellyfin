@@ -56,6 +56,7 @@ namespace Emby.Server.Implementations.Session
         private readonly IDtoService _dtoService;
         private readonly IImageProcessor _imageProcessor;
         private readonly IMediaSourceManager _mediaSourceManager;
+        private readonly IItemService _itemService;
         private readonly IServerApplicationHost _appHost;
         private readonly IDeviceManager _deviceManager;
         private readonly CancellationTokenRegistration _shutdownCallback;
@@ -390,7 +391,7 @@ namespace Emby.Server.Implementations.Session
 
                 var itemIds = nowPlayingQueue.Select(queue => queue.Id).ToArray();
                 session.NowPlayingQueueFullItems = _dtoService.GetBaseItemDtos(
-                    _libraryManager.GetItemList(new InternalItemsQuery { ItemIds = itemIds }),
+                    _itemService.GetItemList(new InternalItemsQuery { ItemIds = itemIds }),
                     new DtoOptions(true));
             }
         }

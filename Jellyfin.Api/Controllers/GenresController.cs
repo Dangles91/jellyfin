@@ -28,6 +28,7 @@ public class GenresController : BaseJellyfinApiController
     private readonly IUserManager _userManager;
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenresController"/> class.
@@ -35,14 +36,17 @@ public class GenresController : BaseJellyfinApiController
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public GenresController(
         IUserManager userManager,
         ILibraryManager libraryManager,
-        IDtoService dtoService)
+        IDtoService dtoService,
+        IItemService itemService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
         _dtoService = dtoService;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -134,11 +138,11 @@ public class GenresController : BaseJellyfinApiController
             && (string.Equals(parentCollectionFolder.CollectionType, CollectionType.Music, StringComparison.Ordinal)
                 || string.Equals(parentCollectionFolder.CollectionType, CollectionType.MusicVideos, StringComparison.Ordinal)))
         {
-            result = _libraryManager.GetMusicGenres(query);
+            result = _itemService.GetMusicGenres(query);
         }
         else
         {
-            result = _libraryManager.GetGenres(query);
+            result = _itemService.GetGenres(query);
         }
 
         var shouldIncludeItemTypes = includeItemTypes.Length != 0;
@@ -163,7 +167,7 @@ public class GenresController : BaseJellyfinApiController
         Genre? item;
         if (genreName.Contains(BaseItem.SlugChar, StringComparison.OrdinalIgnoreCase))
         {
-            item = GetItemFromSlugName<Genre>(_libraryManager, genreName, dtoOptions, BaseItemKind.Genre);
+            item = GetItemFromSlugName<Genre>(genreName, dtoOptions, BaseItemKind.Genre);
         }
         else
         {
@@ -179,24 +183,24 @@ public class GenresController : BaseJellyfinApiController
         return _dtoService.GetBaseItemDto(item, dtoOptions, user);
     }
 
-    private T? GetItemFromSlugName<T>(ILibraryManager libraryManager, string name, DtoOptions dtoOptions, BaseItemKind baseItemKind)
+    private T? GetItemFromSlugName<T>(string name, DtoOptions dtoOptions, BaseItemKind baseItemKind)
         where T : BaseItem, new()
     {
-        var result = libraryManager.GetItemList(new InternalItemsQuery
+        var result = _itemService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '&'),
             IncludeItemTypes = new[] { baseItemKind },
             DtoOptions = dtoOptions
         }).OfType<T>().FirstOrDefault();
 
-        result ??= libraryManager.GetItemList(new InternalItemsQuery
+        result ??= _itemService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '/'),
             IncludeItemTypes = new[] { baseItemKind },
             DtoOptions = dtoOptions
         }).OfType<T>().FirstOrDefault();
 
-        result ??= libraryManager.GetItemList(new InternalItemsQuery
+        result ??= _itemService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '?'),
             IncludeItemTypes = new[] { baseItemKind },

@@ -205,5 +205,9 @@ namespace MediaBrowser.Model.IO
         /// <param name="path">The path.</param>
         /// <returns>Whether the path exists.</returns>
         bool FileExists(string path);
+
+        string ExpandVirtualPath(string path);
+
+        string ReverseVirtualPath(string path);
     }
 }

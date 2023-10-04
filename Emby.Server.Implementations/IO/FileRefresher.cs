@@ -15,7 +15,7 @@ namespace Emby.Server.Implementations.IO
     public sealed class FileRefresher : IDisposable
     {
         private readonly ILogger _logger;
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
         private readonly IServerConfigurationManager _configurationManager;
 
         private readonly List<string> _affectedPaths = new List<string>();
@@ -23,14 +23,14 @@ namespace Emby.Server.Implementations.IO
         private Timer? _timer;
         private bool _disposed;
 
-        public FileRefresher(string path, IServerConfigurationManager configurationManager, ILibraryManager libraryManager, ILogger logger)
+        public FileRefresher(string path, IServerConfigurationManager configurationManager, ILogger logger, IItemService itemService)
         {
             logger.LogDebug("New file refresher created for {0}", path);
             Path = path;
 
             _configurationManager = configurationManager;
-            _libraryManager = libraryManager;
             _logger = logger;
+            _itemService = itemService;
             AddPath(path);
         }
 
@@ -166,7 +166,7 @@ namespace Emby.Server.Implementations.IO
 
             while (item is null && !string.IsNullOrEmpty(path))
             {
-                item = _libraryManager.FindByPath(path, null);
+                item = _itemService.FindItemByPath(path, null);
 
                 path = System.IO.Path.GetDirectoryName(path) ?? string.Empty;
             }

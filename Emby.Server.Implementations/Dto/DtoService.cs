@@ -42,7 +42,6 @@ namespace Emby.Server.Implementations.Dto
         private readonly ILogger<DtoService> _logger;
         private readonly ILibraryManager _libraryManager;
         private readonly IUserDataManager _userDataRepository;
-        private readonly IItemRepository _itemRepo;
 
         private readonly IImageProcessor _imageProcessor;
         private readonly IProviderManager _providerManager;
@@ -52,29 +51,33 @@ namespace Emby.Server.Implementations.Dto
         private readonly Lazy<ILiveTvManager> _livetvManagerFactory;
 
         private readonly ILyricManager _lyricManager;
+        private readonly IItemService _itemService;
+        private readonly ILibraryCollectionManager _libraryCollectionManager;
 
         public DtoService(
             ILogger<DtoService> logger,
             ILibraryManager libraryManager,
             IUserDataManager userDataRepository,
-            IItemRepository itemRepo,
             IImageProcessor imageProcessor,
             IProviderManager providerManager,
             IApplicationHost appHost,
             IMediaSourceManager mediaSourceManager,
             Lazy<ILiveTvManager> livetvManagerFactory,
-            ILyricManager lyricManager)
+            ILyricManager lyricManager,
+            IItemService itemService,
+            ILibraryCollectionManager libraryCollectionManager)
         {
             _logger = logger;
             _libraryManager = libraryManager;
             _userDataRepository = userDataRepository;
-            _itemRepo = itemRepo;
             _imageProcessor = imageProcessor;
             _providerManager = providerManager;
             _appHost = appHost;
             _mediaSourceManager = mediaSourceManager;
             _livetvManagerFactory = livetvManagerFactory;
             _lyricManager = lyricManager;
+            _itemService = itemService;
+            _libraryCollectionManager = libraryCollectionManager;
         }
 
         private ILiveTvManager LivetvManager => _livetvManagerFactory.Value;
@@ -471,7 +474,7 @@ namespace Emby.Server.Implementations.Dto
         {
             if (!string.IsNullOrEmpty(item.Album))
             {
-                var parentAlbumIds = _libraryManager.GetItemIds(new InternalItemsQuery
+                var parentAlbumIds = _itemService.GetItemIds(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
                     Name = item.Album,
@@ -962,7 +965,7 @@ namespace Emby.Server.Implementations.Dto
                             return null;
                         }
 
-                        var artist = _libraryManager.GetArtist(i, new DtoOptions(false)
+                        var artist = _itemService.GetArtist(i, new DtoOptions(false)
                         {
                             EnableImages = false
                         });
@@ -1011,7 +1014,7 @@ namespace Emby.Server.Implementations.Dto
                             return null;
                         }
 
-                        var artist = _libraryManager.GetArtist(i, new DtoOptions(false)
+                        var artist = _itemService.GetArtist(i, new DtoOptions(false)
                         {
                             EnableImages = false
                         });
@@ -1056,7 +1059,7 @@ namespace Emby.Server.Implementations.Dto
 
                 if (options.ContainsField(ItemFields.Chapters))
                 {
-                    dto.Chapters = _itemRepo.GetChapters(item);
+                    dto.Chapters = _itemService.GetChapters(item);
                 }
 
                 if (video.ExtraType.HasValue)
@@ -1277,7 +1280,7 @@ namespace Emby.Server.Implementations.Dto
 
             if (parent is null && originalItem is not UserRootFolder && originalItem is not UserView && originalItem is not AggregateFolder && originalItem is not ICollectionFolder && originalItem is not Channel)
             {
-                parent = _libraryManager.GetCollectionFolders(originalItem).FirstOrDefault();
+                parent = _libraryCollectionManager.GetCollectionFolders(originalItem).FirstOrDefault();
             }
 
             return parent;

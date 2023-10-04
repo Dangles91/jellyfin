@@ -18,6 +18,7 @@ namespace Emby.Server.Implementations.Channels
         private readonly IChannelManager _channelManager;
         private readonly ILogger _logger;
         private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelPostScanTask"/> class.
@@ -25,11 +26,17 @@ namespace Emby.Server.Implementations.Channels
         /// <param name="channelManager">The channel manager.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="libraryManager">The library manager.</param>
-        public ChannelPostScanTask(IChannelManager channelManager, ILogger logger, ILibraryManager libraryManager)
+        /// <param name="itemService">The item service.</param>
+        public ChannelPostScanTask(
+            IChannelManager channelManager,
+            ILogger logger,
+            ILibraryManager libraryManager,
+            IItemService itemService)
         {
             _channelManager = channelManager;
             _logger = logger;
             _libraryManager = libraryManager;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -50,7 +57,7 @@ namespace Emby.Server.Implementations.Channels
         {
             var installedChannelIds = ((ChannelManager)_channelManager).GetInstalledChannelIds();
 
-            var uninstalledChannels = _libraryManager.GetItemList(new InternalItemsQuery
+            var uninstalledChannels = _itemService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Channel },
                 ExcludeItemIds = installedChannelIds.ToArray()
@@ -69,7 +76,7 @@ namespace Emby.Server.Implementations.Channels
             _logger.LogInformation("Cleaning channel {0} from database", channel.Id);
 
             // Delete all channel items
-            var items = _libraryManager.GetItemList(new InternalItemsQuery
+            var items = _itemService.GetItemList(new InternalItemsQuery
             {
                 ChannelIds = new[] { channel.Id }
             });
@@ -78,23 +85,21 @@ namespace Emby.Server.Implementations.Channels
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _libraryManager.DeleteItem(
+                _itemService.DeleteItem(
                     item,
                     new DeleteOptions
                     {
                         DeleteFileLocation = false
-                    },
-                    false);
+                    });
             }
 
             // Finally, delete the channel itself
-            _libraryManager.DeleteItem(
+            _itemService.DeleteItem(
                 channel,
                 new DeleteOptions
                 {
                     DeleteFileLocation = false
-                },
-                false);
+                });
         }
     }
 }

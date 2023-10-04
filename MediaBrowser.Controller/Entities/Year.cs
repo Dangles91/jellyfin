@@ -64,7 +64,7 @@ namespace MediaBrowser.Controller.Entities
 
             query.Years = new[] { year };
 
-            return LibraryManager.GetItemList(query);
+            return ItemService.GetItemList(query);
         }
 
         public int? GetYearValue()

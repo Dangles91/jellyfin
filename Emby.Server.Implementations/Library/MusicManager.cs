@@ -20,10 +20,12 @@ namespace Emby.Server.Implementations.Library
     public class MusicManager : IMusicManager
     {
         private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
-        public MusicManager(ILibraryManager libraryManager)
+        public MusicManager(ILibraryManager libraryManager, IItemService itemService)
         {
             _libraryManager = libraryManager;
+            _itemService = itemService;
         }
 
         public List<BaseItem> GetInstantMixFromSong(Audio item, User user, DtoOptions dtoOptions)
@@ -87,7 +89,7 @@ namespace Emby.Server.Implementations.Library
 
         public List<BaseItem> GetInstantMixFromGenreIds(Guid[] genreIds, User user, DtoOptions dtoOptions)
         {
-            return _libraryManager.GetItemList(new InternalItemsQuery(user)
+            return _itemService.GetItemList(new InternalItemsQuery(user)
             {
                 IncludeItemTypes = new[] { BaseItemKind.Audio },
 

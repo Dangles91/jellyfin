@@ -63,6 +63,7 @@ namespace MediaBrowser.Providers.MediaInfo
         /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/>.</param>
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="namingOptions">The <see cref="NamingOptions"/>.</param>
+        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
         public ProbeProvider(
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
@@ -76,10 +77,11 @@ namespace MediaBrowser.Providers.MediaInfo
             ILibraryManager libraryManager,
             IFileSystem fileSystem,
             ILoggerFactory loggerFactory,
-            NamingOptions namingOptions)
+            NamingOptions namingOptions,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             _logger = loggerFactory.CreateLogger<ProbeProvider>();
-            _audioProber = new AudioFileProber(loggerFactory.CreateLogger<AudioFileProber>(), mediaSourceManager, mediaEncoder, itemRepo, libraryManager);
+            _audioProber = new AudioFileProber(loggerFactory.CreateLogger<AudioFileProber>(), mediaSourceManager, mediaEncoder, itemRepo, libraryManager, libraryOptionsManager);
             _audioResolver = new AudioResolver(loggerFactory.CreateLogger<AudioResolver>(), localization, mediaEncoder, fileSystem, namingOptions);
             _subtitleResolver = new SubtitleResolver(loggerFactory.CreateLogger<SubtitleResolver>(), localization, mediaEncoder, fileSystem, namingOptions);
             _videoProber = new FFProbeVideoInfo(
@@ -95,7 +97,8 @@ namespace MediaBrowser.Providers.MediaInfo
                 chapterManager,
                 libraryManager,
                 _audioResolver,
-                _subtitleResolver);
+                _subtitleResolver,
+                libraryOptionsManager);
         }
 
         /// <inheritdoc />

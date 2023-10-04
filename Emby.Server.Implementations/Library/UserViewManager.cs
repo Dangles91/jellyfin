@@ -23,6 +23,7 @@ using MediaBrowser.Model.Querying;
 
 namespace Emby.Server.Implementations.Library
 {
+    // TODO: Dangles: This also needs some work
     public class UserViewManager : IUserViewManager
     {
         private readonly ILibraryManager _libraryManager;
@@ -380,10 +381,10 @@ namespace Emby.Server.Implementations.Library
 
             if (parents.Count == 0)
             {
-                return _libraryManager.GetItemList(query, false);
+                return _itemService.GetItemList(query, false);
             }
 
-            return _libraryManager.GetItemList(query, parents);
+            return _itemService.GetItemList(query, parents);
         }
     }
 }

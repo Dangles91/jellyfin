@@ -50,7 +50,7 @@ namespace Emby.Dlna.Didl
         private readonly IMediaSourceManager _mediaSourceManager;
         private readonly ILogger _logger;
         private readonly IMediaEncoder _mediaEncoder;
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
         public DidlBuilder(
             DeviceProfile profile,
@@ -63,7 +63,7 @@ namespace Emby.Dlna.Didl
             IMediaSourceManager mediaSourceManager,
             ILogger logger,
             IMediaEncoder mediaEncoder,
-            ILibraryManager libraryManager)
+            IItemService itemService)
         {
             _profile = profile;
             _user = user;
@@ -75,7 +75,7 @@ namespace Emby.Dlna.Didl
             _mediaSourceManager = mediaSourceManager;
             _logger = logger;
             _mediaEncoder = mediaEncoder;
-            _libraryManager = libraryManager;
+            _itemService = itemService;
         }
 
         public static string NormalizeDlnaMediaUrl(string url)
@@ -878,7 +878,7 @@ namespace Emby.Dlna.Didl
 
             // Seeing some LG models locking up due content with large lists of people
             // The actual issue might just be due to processing a more metadata than it can handle
-            var people = _libraryManager.GetPeople(
+            var people = _itemService.GetPeople(
                 new InternalPeopleQuery
                 {
                     ItemId = item.Id,

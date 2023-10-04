@@ -12,27 +12,21 @@ namespace Emby.Server.Implementations.Library.Validators
     /// </summary>
     public class ArtistsPostScanTask : ILibraryPostScanTask
     {
-        /// <summary>
-        /// The _library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
         private readonly ILogger<ArtistsValidator> _logger;
-        private readonly IItemRepository _itemRepo;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ArtistsPostScanTask" /> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
+        /// <param name="itemService">The item service.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="itemRepo">The item repository.</param>
+
         public ArtistsPostScanTask(
-            ILibraryManager libraryManager,
-            ILogger<ArtistsValidator> logger,
-            IItemRepository itemRepo)
+            IItemService itemService,
+            ILogger<ArtistsValidator> logger)
         {
-            _libraryManager = libraryManager;
+            _itemService = itemService;
             _logger = logger;
-            _itemRepo = itemRepo;
         }
 
         /// <summary>
@@ -43,7 +37,7 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <returns>Task.</returns>
         public Task Run(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            return new ArtistsValidator(_libraryManager, _logger, _itemRepo).Run(progress, cancellationToken);
+            return new ArtistsValidator(_logger, _itemService).Run(progress, cancellationToken);
         }
     }
 }

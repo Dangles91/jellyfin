@@ -55,6 +55,8 @@ namespace MediaBrowser.Providers.Manager
         private readonly ISubtitleManager _subtitleManager;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IBaseItemManager _baseItemManager;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IItemService _itemService;
         private readonly ConcurrentDictionary<Guid, double> _activeRefreshes = new();
         private readonly CancellationTokenSource _disposeCancellationTokenSource = new();
         private readonly PriorityQueue<(Guid ItemId, MetadataRefreshOptions RefreshOptions), RefreshPriority> _refreshQueue = new();
@@ -79,6 +81,8 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="appPaths">The server application paths.</param>
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="baseItemManager">The BaseItem manager.</param>
+        /// <param name="libraryOptionsManager">The instance of <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
         public ProviderManager(
             IHttpClientFactory httpClientFactory,
             ISubtitleManager subtitleManager,
@@ -88,7 +92,9 @@ namespace MediaBrowser.Providers.Manager
             IFileSystem fileSystem,
             IServerApplicationPaths appPaths,
             ILibraryManager libraryManager,
-            IBaseItemManager baseItemManager)
+            IBaseItemManager baseItemManager,
+            ILibraryOptionsManager libraryOptionsManager,
+            IItemService itemService)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -99,6 +105,8 @@ namespace MediaBrowser.Providers.Manager
             _libraryManager = libraryManager;
             _subtitleManager = subtitleManager;
             _baseItemManager = baseItemManager;
+            _libraryOptionsManager = libraryOptionsManager;
+            _itemService = itemService;
         }
 
         /// <inheritdoc/>
@@ -307,7 +315,7 @@ namespace MediaBrowser.Providers.Manager
         private IEnumerable<IRemoteImageProvider> GetRemoteImageProviders(BaseItem item, bool includeDisabled)
         {
             var options = GetMetadataOptions(item);
-            var libraryOptions = _libraryManager.GetLibraryOptions(item);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
 
             return GetImageProvidersInternal(
                 item,
@@ -320,7 +328,7 @@ namespace MediaBrowser.Providers.Manager
         /// <inheritdoc/>
         public IEnumerable<IImageProvider> GetImageProviders(BaseItem item, ImageRefreshOptions refreshOptions)
         {
-            return GetImageProvidersInternal(item, _libraryManager.GetLibraryOptions(item), GetMetadataOptions(item), refreshOptions, false);
+            return GetImageProvidersInternal(item, _libraryOptionsManager.GetLibraryOptions(item), GetMetadataOptions(item), refreshOptions, false);
         }
 
         private IEnumerable<IImageProvider> GetImageProvidersInternal(BaseItem item, LibraryOptions libraryOptions, MetadataOptions options, ImageRefreshOptions refreshOptions, bool includeDisabled)
@@ -591,7 +599,7 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="savers">The savers.</param>
         private async Task SaveMetadataAsync(BaseItem item, ItemUpdateType updateType, IEnumerable<IMetadataSaver> savers)
         {
-            var libraryOptions = _libraryManager.GetLibraryOptions(item);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
 
             foreach (var saver in savers.Where(i => IsSaverEnabledForItem(i, item, libraryOptions, updateType, false)))
             {
@@ -736,7 +744,7 @@ namespace MediaBrowser.Providers.Manager
             }
             else
             {
-                libraryOptions = _libraryManager.GetLibraryOptions(referenceItem);
+                libraryOptions = _libraryOptionsManager.GetLibraryOptions(referenceItem);
             }
 
             var options = GetMetadataOptions(referenceItem);
@@ -1036,7 +1044,7 @@ namespace MediaBrowser.Providers.Manager
 
         private async Task RefreshArtist(MusicArtist item, MetadataRefreshOptions options, CancellationToken cancellationToken)
         {
-            var albums = _libraryManager
+            var albums = _itemService
                 .GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },

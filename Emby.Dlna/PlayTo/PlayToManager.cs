@@ -38,12 +38,27 @@ namespace Emby.Dlna.PlayTo
         private readonly IDeviceDiscovery _deviceDiscovery;
         private readonly IMediaSourceManager _mediaSourceManager;
         private readonly IMediaEncoder _mediaEncoder;
+        private readonly IItemService _itemService;
 
         private bool _disposed;
         private SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
         private CancellationTokenSource _disposeCancellationTokenSource = new CancellationTokenSource();
 
-        public PlayToManager(ILogger logger, ISessionManager sessionManager, ILibraryManager libraryManager, IUserManager userManager, IDlnaManager dlnaManager, IServerApplicationHost appHost, IImageProcessor imageProcessor, IDeviceDiscovery deviceDiscovery, IHttpClientFactory httpClientFactory, IUserDataManager userDataManager, ILocalizationManager localization, IMediaSourceManager mediaSourceManager, IMediaEncoder mediaEncoder)
+        public PlayToManager(
+            ILogger logger,
+            ISessionManager sessionManager,
+            ILibraryManager libraryManager,
+            IUserManager userManager,
+            IDlnaManager dlnaManager,
+            IServerApplicationHost appHost,
+            IImageProcessor imageProcessor,
+            IDeviceDiscovery deviceDiscovery,
+            IHttpClientFactory httpClientFactory,
+            IUserDataManager userDataManager,
+            ILocalizationManager localization,
+            IMediaSourceManager mediaSourceManager,
+            IMediaEncoder mediaEncoder,
+            IItemService itemService)
         {
             _logger = logger;
             _sessionManager = sessionManager;
@@ -58,6 +73,7 @@ namespace Emby.Dlna.PlayTo
             _localization = localization;
             _mediaSourceManager = mediaSourceManager;
             _mediaEncoder = mediaEncoder;
+            _itemService = itemService;
         }
 
         public void Start()
@@ -204,7 +220,8 @@ namespace Emby.Dlna.PlayTo
                     _localization,
                     _mediaSourceManager,
                     _mediaEncoder,
-                    device);
+                    device,
+                    _itemService);
 
                 sessionInfo.AddController(controller);
 

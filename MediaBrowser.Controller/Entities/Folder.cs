@@ -213,7 +213,7 @@ namespace MediaBrowser.Controller.Entities
                 item.DateModified = DateTime.UtcNow;
             }
 
-            LibraryManager.CreateItem(item, this);
+            ItemService.CreateItem(item, this);
         }
 
         public override bool IsVisible(User user)
@@ -405,11 +405,16 @@ namespace MediaBrowser.Controller.Entities
                             Logger.LogDebug("Removed item: {Path}", item.Path);
 
                             item.SetParent(null);
-                            LibraryManager.DeleteItem(item, new DeleteOptions { DeleteFileLocation = false }, this, false);
+                            ItemService.DeleteItem(
+                                item,
+                                new DeleteOptions
+                                {
+                                    DeleteFileLocation = false
+                                });
                         }
                     }
 
-                    LibraryManager.CreateItems(newItems, this, cancellationToken);
+                    ItemService.CreateItems(newItems, this, cancellationToken);
                 }
             }
             else
@@ -614,10 +619,10 @@ namespace MediaBrowser.Controller.Entities
         /// <returns>Returns set of base items.</returns>
         protected virtual IEnumerable<BaseItem> GetNonCachedChildren(IDirectoryService directoryService)
         {
-            var collectionType = LibraryManager.GetContentType(this);
-            var libraryOptions = LibraryManager.GetLibraryOptions(this);
+            var collectionType = ItemContentTypeProvider.GetContentType(this);
+            var libraryOptions = LibraryOptionsManager.GetLibraryOptions(this);
 
-            return LibraryManager.ResolvePaths(GetFileSystemChildren(directoryService), directoryService, this, libraryOptions, collectionType);
+            return ItemPathResolver.ResolvePaths(GetFileSystemChildren(directoryService), this, libraryOptions, collectionType);
         }
 
         /// <summary>
@@ -626,7 +631,7 @@ namespace MediaBrowser.Controller.Entities
         /// <returns>IEnumerable{BaseItem}.</returns>
         protected List<BaseItem> GetCachedChildren()
         {
-            return ItemRepository.GetItemList(new InternalItemsQuery
+            return ItemService.GetItemList(new InternalItemsQuery
             {
                 Parent = this,
                 GroupByPresentationUniqueKey = false,
@@ -681,7 +686,7 @@ namespace MediaBrowser.Controller.Entities
             if (!query.ForceDirect && RequiresPostFiltering(query))
             {
                 IEnumerable<BaseItem> items;
-                Func<BaseItem, bool> filter = i => UserViewBuilder.Filter(i, user, query, UserDataManager, LibraryManager);
+                Func<BaseItem, bool> filter = i => MediaBrowser.Controller.Entities.UserViewBuilder.Filter(i, user, query, UserDataManager, LibraryManager);
 
                 if (query.User is null)
                 {
@@ -707,7 +712,7 @@ namespace MediaBrowser.Controller.Entities
                 return QueryWithPostFiltering2(query);
             }
 
-            return LibraryManager.GetItemsResult(query);
+            return ItemService.GetItemsResult(query);
         }
 
         protected QueryResult<BaseItem> QueryWithPostFiltering2(InternalItemsQuery query)
@@ -718,7 +723,7 @@ namespace MediaBrowser.Controller.Entities
             query.StartIndex = null;
             query.Limit = null;
 
-            IEnumerable<BaseItem> itemsList = LibraryManager.GetItemList(query);
+            IEnumerable<BaseItem> itemsList = ItemService.GetItemList(query);
             var user = query.User;
 
             if (user is not null)
@@ -879,7 +884,7 @@ namespace MediaBrowser.Controller.Entities
         {
             if (query.ItemIds.Length > 0)
             {
-                var result = LibraryManager.GetItemsResult(query);
+                var result = ItemService.GetItemsResult(query);
 
                 if (query.OrderBy.Count == 0 && query.ItemIds.Length > 1)
                 {
@@ -898,7 +903,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (query.ItemIds.Length > 0)
             {
-                var result = LibraryManager.GetItemList(query);
+                var result = ItemService.GetItemList(query);
 
                 if (query.OrderBy.Count == 0 && query.ItemIds.Length > 1)
                 {
@@ -937,7 +942,7 @@ namespace MediaBrowser.Controller.Entities
 
             var user = query.User;
 
-            Func<BaseItem, bool> filter = i => UserViewBuilder.Filter(i, user, query, UserDataManager, LibraryManager);
+            Func<BaseItem, bool> filter = i => MediaBrowser.Controller.Entities.UserViewBuilder.Filter(i, user, query, UserDataManager, LibraryManager);
 
             IEnumerable<BaseItem> items;
 
@@ -989,10 +994,10 @@ namespace MediaBrowser.Controller.Entities
             // This must be the last filter
             if (query.AdjacentTo.HasValue && !query.AdjacentTo.Value.Equals(default))
             {
-                items = UserViewBuilder.FilterForAdjacency(items.ToList(), query.AdjacentTo.Value);
+                items = MediaBrowser.Controller.Entities.UserViewBuilder.FilterForAdjacency(items.ToList(), query.AdjacentTo.Value);
             }
 
-            return UserViewBuilder.SortAndPage(items, null, query, LibraryManager, enableSorting);
+            return MediaBrowser.Controller.Entities.UserViewBuilder.SortAndPage(items, null, query, LibraryManager, enableSorting);
         }
 
         private static IEnumerable<BaseItem> CollapseBoxSetItemsIfNeeded(
@@ -1502,7 +1507,7 @@ namespace MediaBrowser.Controller.Entities
                     else
                     {
                         var itemCollectionFolderIds =
-                            LibraryManager.GetCollectionFolders(childOwner, allUserRootChildren).Select(f => f.Id);
+                            LibraryCollectionManager.GetCollectionFolders(childOwner, allUserRootChildren).Select(f => f.Id);
 
                         if (!itemCollectionFolderIds.Any(collectionFolderIds.Contains))
                         {
@@ -1562,7 +1567,7 @@ namespace MediaBrowser.Controller.Entities
                         {
                             Logger.LogDebug("Found shortcut at {0}", i.FullName);
 
-                            var resolvedPath = CollectionFolder.ApplicationHost.ExpandVirtualPath(FileSystem.ResolveShortcut(i.FullName));
+                            var resolvedPath = FileSystem.ExpandVirtualPath(FileSystem.ResolveShortcut(i.FullName));
 
                             if (!string.IsNullOrEmpty(resolvedPath))
                             {

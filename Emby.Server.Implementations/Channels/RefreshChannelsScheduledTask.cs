@@ -20,6 +20,7 @@ namespace Emby.Server.Implementations.Channels
         private readonly ILogger<RefreshChannelsScheduledTask> _logger;
         private readonly ILibraryManager _libraryManager;
         private readonly ILocalizationManager _localization;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshChannelsScheduledTask"/> class.
@@ -28,16 +29,19 @@ namespace Emby.Server.Implementations.Channels
         /// <param name="logger">The logger.</param>
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="localization">The localization manager.</param>
+        /// <param name="itemService">The item service.</param>
         public RefreshChannelsScheduledTask(
             IChannelManager channelManager,
             ILogger<RefreshChannelsScheduledTask> logger,
             ILibraryManager libraryManager,
-            ILocalizationManager localization)
+            ILocalizationManager localization,
+            IItemService itemService)
         {
             _channelManager = channelManager;
             _logger = logger;
             _libraryManager = libraryManager;
             _localization = localization;
+            _itemService = itemService;
         }
 
         /// <inheritdoc />
@@ -68,7 +72,7 @@ namespace Emby.Server.Implementations.Channels
 
             await manager.RefreshChannels(new SimpleProgress<double>(), cancellationToken).ConfigureAwait(false);
 
-            await new ChannelPostScanTask(_channelManager, _logger, _libraryManager).Run(progress, cancellationToken)
+            await new ChannelPostScanTask(_channelManager, _logger, _libraryManager, _itemService).Run(progress, cancellationToken)
                     .ConfigureAwait(false);
         }
 

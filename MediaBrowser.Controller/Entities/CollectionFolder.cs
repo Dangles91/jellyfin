@@ -29,8 +29,6 @@ namespace MediaBrowser.Controller.Entities
     /// </summary>
     public class CollectionFolder : Folder, ICollectionFolder
     {
-        private static readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
-        private static readonly ConcurrentDictionary<string, LibraryOptions> _libraryOptions = new ConcurrentDictionary<string, LibraryOptions>();
         private bool _requiresRefresh;
 
         /// <summary>
@@ -59,10 +57,6 @@ namespace MediaBrowser.Controller.Entities
 
         public Guid[] PhysicalFolderIds { get; set; }
 
-        public static IXmlSerializer XmlSerializer { get; set; }
-
-        public static IServerApplicationHost ApplicationHost { get; set; }
-
         [JsonIgnore]
         public override bool SupportsPlayedStatus => false;
 
@@ -88,78 +82,6 @@ namespace MediaBrowser.Controller.Entities
         {
             return false;
         }
-
-        public LibraryOptions GetLibraryOptions()
-        {
-            return GetLibraryOptions(Path);
-        }
-
-        private static LibraryOptions LoadLibraryOptions(string path)
-        {
-            try
-            {
-                if (XmlSerializer.DeserializeFromFile(typeof(LibraryOptions), GetLibraryOptionsPath(path)) is not LibraryOptions result)
-                {
-                    return new LibraryOptions();
-                }
-
-                foreach (var mediaPath in result.PathInfos)
-                {
-                    if (!string.IsNullOrEmpty(mediaPath.Path))
-                    {
-                        mediaPath.Path = ApplicationHost.ExpandVirtualPath(mediaPath.Path);
-                    }
-                }
-
-                return result;
-            }
-            catch (FileNotFoundException)
-            {
-                return new LibraryOptions();
-            }
-            catch (IOException)
-            {
-                return new LibraryOptions();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error loading library options");
-
-                return new LibraryOptions();
-            }
-        }
-
-        private static string GetLibraryOptionsPath(string path)
-        {
-            return System.IO.Path.Combine(path, "options.xml");
-        }
-
-        public void UpdateLibraryOptions(LibraryOptions options)
-        {
-            SaveLibraryOptions(Path, options);
-        }
-
-        public static LibraryOptions GetLibraryOptions(string path)
-            => _libraryOptions.GetOrAdd(path, LoadLibraryOptions);
-
-        public static void SaveLibraryOptions(string path, LibraryOptions options)
-        {
-            _libraryOptions[path] = options;
-
-            var clone = JsonSerializer.Deserialize<LibraryOptions>(JsonSerializer.SerializeToUtf8Bytes(options, _jsonOptions), _jsonOptions);
-            foreach (var mediaPath in clone.PathInfos)
-            {
-                if (!string.IsNullOrEmpty(mediaPath.Path))
-                {
-                    mediaPath.Path = ApplicationHost.ReverseVirtualPath(mediaPath.Path);
-                }
-            }
-
-            XmlSerializer.SerializeToFile(clone, GetLibraryOptionsPath(path));
-        }
-
-        public static void OnCollectionFolderChange()
-            => _libraryOptions.Clear();
 
         public override bool IsSaveLocalMetadataEnabled()
         {
@@ -270,7 +192,7 @@ namespace MediaBrowser.Controller.Entities
         {
             var path = ContainingFolderPath;
 
-            var args = new ItemResolveArgs(ConfigurationManager.ApplicationPaths, LibraryManager)
+            var args = new ItemResolveArgs(ConfigurationManager.ApplicationPaths, LibraryOptionsManager, ItemPathResolver, ItemContentTypeProvider, FileSystem)
             {
                 FileInfo = FileSystem.GetDirectoryInfo(path),
                 Parent = GetParent() as Folder,
@@ -282,7 +204,7 @@ namespace MediaBrowser.Controller.Entities
             {
                 var flattenFolderDepth = 0;
 
-                var files = FileData.GetFilteredFileSystemEntries(directoryService, args.Path, FileSystem, ApplicationHost, Logger, args, flattenFolderDepth: flattenFolderDepth, resolveShortcuts: true);
+                var files = FileData.GetFilteredFileSystemEntries(directoryService, args.Path, FileSystem, Logger, args, flattenFolderDepth: flattenFolderDepth, resolveShortcuts: true);
 
                 args.FileSystemChildren = files;
             }
@@ -330,7 +252,7 @@ namespace MediaBrowser.Controller.Entities
                 return PhysicalFolderIds.Select(i => LibraryManager.GetItemById(i)).OfType<Folder>();
             }
 
-            var rootChildren = LibraryManager.RootFolder.Children
+            var rootChildren = LibraryRootFolderManager.GetRootFolder().Children
                 .OfType<Folder>()
                 .ToList();
 
@@ -348,7 +270,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (result.Count == 0)
             {
-                if (LibraryManager.FindByPath(path, true) is Folder folder)
+                if (ItemService.FindItemByPath(path, true) is Folder folder)
                 {
                     result.Add(folder);
                 }

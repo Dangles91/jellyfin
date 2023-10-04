@@ -67,7 +67,7 @@ namespace MediaBrowser.Controller.Entities
         {
             query.StudioIds = new[] { Id };
 
-            return LibraryManager.GetItemList(query);
+            return ItemService.GetItemList(query);
         }
 
         public static string GetPath(string name)

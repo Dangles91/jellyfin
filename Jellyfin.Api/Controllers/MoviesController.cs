@@ -27,27 +27,27 @@ namespace Jellyfin.Api.Controllers;
 public class MoviesController : BaseJellyfinApiController
 {
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
     private readonly IServerConfigurationManager _serverConfigurationManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MoviesController"/> class.
     /// </summary>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public MoviesController(
         IUserManager userManager,
-        ILibraryManager libraryManager,
         IDtoService dtoService,
-        IServerConfigurationManager serverConfigurationManager)
+        IServerConfigurationManager serverConfigurationManager,
+        IItemService itemService)
     {
         _userManager = userManager;
-        _libraryManager = libraryManager;
         _dtoService = dtoService;
         _serverConfigurationManager = serverConfigurationManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public class MoviesController : BaseJellyfinApiController
             DtoOptions = dtoOptions
         };
 
-        var recentlyPlayedMovies = _libraryManager.GetItemList(query);
+        var recentlyPlayedMovies = _itemService.GetItemList(query);
 
         var itemTypes = new List<BaseItemKind> { BaseItemKind.Movie };
         if (_serverConfigurationManager.Configuration.EnableExternalContentInSuggestions)
@@ -105,7 +105,7 @@ public class MoviesController : BaseJellyfinApiController
             itemTypes.Add(BaseItemKind.LiveTvProgram);
         }
 
-        var likedMovies = _libraryManager.GetItemList(new InternalItemsQuery(user)
+        var likedMovies = _itemService.GetItemList(new InternalItemsQuery(user)
         {
             IncludeItemTypes = itemTypes.ToArray(),
             IsMovie = true,
@@ -190,7 +190,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var name in names)
         {
-            var items = _libraryManager.GetItemList(
+            var items = _itemService.GetItemList(
                 new InternalItemsQuery(user)
                 {
                     Person = name,
@@ -231,7 +231,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var name in names)
         {
-            var items = _libraryManager.GetItemList(new InternalItemsQuery(user)
+            var items = _itemService.GetItemList(new InternalItemsQuery(user)
             {
                 Person = name,
                 // Account for duplicates by IMDb id, since the database doesn't support this yet
@@ -270,7 +270,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var item in baselineItems)
         {
-            var similar = _libraryManager.GetItemList(new InternalItemsQuery(user)
+            var similar = _itemService.GetItemList(new InternalItemsQuery(user)
             {
                 Limit = itemLimit,
                 IncludeItemTypes = itemTypes.ToArray(),
@@ -297,7 +297,7 @@ public class MoviesController : BaseJellyfinApiController
 
     private IEnumerable<string> GetActors(IEnumerable<BaseItem> items)
     {
-        var people = _libraryManager.GetPeople(new InternalPeopleQuery(Array.Empty<string>(), new[] { PersonType.Director })
+        var people = _itemService.GetPeople(new InternalPeopleQuery(Array.Empty<string>(), new[] { PersonType.Director })
         {
             MaxListOrder = 3
         });
@@ -312,7 +312,7 @@ public class MoviesController : BaseJellyfinApiController
 
     private IEnumerable<string> GetDirectors(IEnumerable<BaseItem> items)
     {
-        var people = _libraryManager.GetPeople(new InternalPeopleQuery(
+        var people = _itemService.GetPeople(new InternalPeopleQuery(
             new[] { PersonType.Director },
             Array.Empty<string>()));
 

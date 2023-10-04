@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Server.Implementations.Library;
 using Jellyfin.Data.Entities;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -38,6 +39,8 @@ namespace Emby.Server.Implementations.Playlists
         private readonly IUserManager _userManager;
         private readonly IProviderManager _providerManager;
         private readonly IConfiguration _appConfig;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IItemService _itemService;
 
         public PlaylistManager(
             ILibraryManager libraryManager,
@@ -46,7 +49,9 @@ namespace Emby.Server.Implementations.Playlists
             ILogger<PlaylistManager> logger,
             IUserManager userManager,
             IProviderManager providerManager,
-            IConfiguration appConfig)
+            IConfiguration appConfig,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemService itemService)
         {
             _libraryManager = libraryManager;
             _fileSystem = fileSystem;
@@ -55,6 +60,8 @@ namespace Emby.Server.Implementations.Playlists
             _userManager = userManager;
             _providerManager = providerManager;
             _appConfig = appConfig;
+            _libraryRootFolderManager = libraryRootFolderManager;
+            _itemService = itemService;
         }
 
         public IEnumerable<Playlist> GetPlaylists(Guid userId)
@@ -527,8 +534,8 @@ namespace Emby.Server.Implementations.Playlists
         {
             const string TypeName = "PlaylistsFolder";
 
-            return _libraryManager.RootFolder.Children.OfType<Folder>().FirstOrDefault(i => string.Equals(i.GetType().Name, TypeName, StringComparison.Ordinal)) ??
-                _libraryManager.GetUserRootFolder().Children.OfType<Folder>().FirstOrDefault(i => string.Equals(i.GetType().Name, TypeName, StringComparison.Ordinal));
+            return _libraryRootFolderManager.GetRootFolder().Children.OfType<Folder>().FirstOrDefault(i => string.Equals(i.GetType().Name, TypeName, StringComparison.Ordinal)) ??
+                _libraryRootFolderManager.GetUserRootFolder().Children.OfType<Folder>().FirstOrDefault(i => string.Equals(i.GetType().Name, TypeName, StringComparison.Ordinal));
         }
 
         /// <inheritdoc />
@@ -553,15 +560,14 @@ namespace Emby.Server.Implementations.Playlists
                 else if (!playlist.OpenAccess)
                 {
                     // Remove playlist if not shared
-                    _libraryManager.DeleteItem(
+                    _itemService.DeleteItem(
                         playlist,
+                        playlist.GetParent(),
                         new DeleteOptions
                         {
                             DeleteFileLocation = false,
                             DeleteFromExternalProvider = false
-                        },
-                        playlist.GetParent(),
-                        false);
+                        });
                 }
             }
         }

@@ -26,19 +26,19 @@ namespace Emby.Server.Implementations.Library.Validators
         /// The logger.
         /// </summary>
         private readonly ILogger<ArtistsValidator> _logger;
-        private readonly IItemRepository _itemRepo;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ArtistsValidator" /> class.
         /// </summary>
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="itemRepo">The item repository.</param>
-        public ArtistsValidator(ILibraryManager libraryManager, ILogger<ArtistsValidator> logger, IItemRepository itemRepo)
+        /// <param name="itemService">The item service</param>
+        public ArtistsValidator(ILibraryManager libraryManager, ILogger<ArtistsValidator> logger, IItemService itemService)
         {
             _libraryManager = libraryManager;
             _logger = logger;
-            _itemRepo = itemRepo;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <returns>Task.</returns>
         public async Task Run(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            var names = _itemRepo.GetAllArtistNames();
+            var names = _itemService.GetAllArtistNames();
 
             var numComplete = 0;
             var count = names.Count;
@@ -58,7 +58,7 @@ namespace Emby.Server.Implementations.Library.Validators
             {
                 try
                 {
-                    var item = _libraryManager.GetArtist(name);
+                    var item = _itemService.GetArtist(name);
 
                     await item.RefreshMetadata(cancellationToken).ConfigureAwait(false);
                 }
@@ -80,7 +80,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(percent);
             }
 
-            var deadEntities = _libraryManager.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.MusicArtist },
                 IsDeadArtist = true,
@@ -96,13 +96,12 @@ namespace Emby.Server.Implementations.Library.Validators
 
                 _logger.LogInformation("Deleting dead {2} {0} {1}.", item.Id.ToString("N", CultureInfo.InvariantCulture), item.Name, item.GetType().Name);
 
-                _libraryManager.DeleteItem(
+                _itemService.DeleteItem(
                     item,
                     new DeleteOptions
                     {
                         DeleteFileLocation = false
-                    },
-                    false);
+                    });
             }
 
             progress.Report(100);

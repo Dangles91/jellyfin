@@ -27,6 +27,7 @@ namespace Emby.Server.Implementations.Library.Validators
         private readonly ILogger _logger;
 
         private readonly IFileSystem _fileSystem;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PeopleValidator" /> class.
@@ -34,11 +35,13 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="fileSystem">The file system.</param>
-        public PeopleValidator(ILibraryManager libraryManager, ILogger logger, IFileSystem fileSystem)
+        /// <param name="itemService">The item service.</param>
+        public PeopleValidator(ILibraryManager libraryManager, ILogger logger, IFileSystem fileSystem, IItemService itemService)
         {
             _libraryManager = libraryManager;
             _logger = logger;
             _fileSystem = fileSystem;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -49,7 +52,7 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <returns>Task.</returns>
         public async Task ValidatePeople(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            var people = _libraryManager.GetPeopleNames(new InternalPeopleQuery());
+            var people = _itemService.GetPeopleNames(new InternalPeopleQuery());
 
             var numComplete = 0;
 
@@ -90,7 +93,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(100 * percent);
             }
 
-            var deadEntities = _libraryManager.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Person },
                 IsDeadPerson = true,
@@ -105,13 +108,12 @@ namespace Emby.Server.Implementations.Library.Validators
                     item.Name,
                     item.GetType().Name);
 
-                _libraryManager.DeleteItem(
+                _itemService.DeleteItem(
                     item,
                     new DeleteOptions
                     {
                         DeleteFileLocation = false
-                    },
-                    false);
+                    });
             }
 
             progress.Report(100);

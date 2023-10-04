@@ -49,7 +49,7 @@ public class VideosController : BaseJellyfinApiController
     private readonly TranscodingJobHelper _transcodingJobHelper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EncodingHelper _encodingHelper;
-
+    private readonly ILibraryRootFolderManager _libraryRootFolderManager;
     private readonly TranscodingJobType _transcodingJobType = TranscodingJobType.Progressive;
 
     /// <summary>
@@ -66,6 +66,7 @@ public class VideosController : BaseJellyfinApiController
     /// <param name="transcodingJobHelper">Instance of the <see cref="TranscodingJobHelper"/> class.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
+    /// <param name="libraryRootFolderManager">Instance of <see cref="ILibraryRootFolderManager"/> interface.</param>
     public VideosController(
         ILibraryManager libraryManager,
         IUserManager userManager,
@@ -77,7 +78,8 @@ public class VideosController : BaseJellyfinApiController
         IDeviceManager deviceManager,
         TranscodingJobHelper transcodingJobHelper,
         IHttpClientFactory httpClientFactory,
-        EncodingHelper encodingHelper)
+        EncodingHelper encodingHelper,
+        ILibraryRootFolderManager libraryRootFolderManager)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
@@ -90,6 +92,7 @@ public class VideosController : BaseJellyfinApiController
         _transcodingJobHelper = transcodingJobHelper;
         _httpClientFactory = httpClientFactory;
         _encodingHelper = encodingHelper;
+        _libraryRootFolderManager = libraryRootFolderManager;
     }
 
     /// <summary>
@@ -111,8 +114,8 @@ public class VideosController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? (userId.Value.Equals(default)
-                ? _libraryManager.RootFolder
-                : _libraryManager.GetUserRootFolder())
+                ? _libraryRootFolderManager.GetRootFolder()
+                : _libraryRootFolderManager.GetUserRootFolder())
             : _libraryManager.GetItemById(itemId);
 
         var dtoOptions = new DtoOptions();

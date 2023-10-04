@@ -32,6 +32,7 @@ public class TvShowsController : BaseJellyfinApiController
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
     private readonly ITVSeriesManager _tvSeriesManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TvShowsController"/> class.
@@ -40,16 +41,19 @@ public class TvShowsController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="tvSeriesManager">Instance of the <see cref="ITVSeriesManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public TvShowsController(
         IUserManager userManager,
         ILibraryManager libraryManager,
         IDtoService dtoService,
-        ITVSeriesManager tvSeriesManager)
+        ITVSeriesManager tvSeriesManager,
+        IItemService itemService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
         _dtoService = dtoService;
         _tvSeriesManager = tvSeriesManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -162,7 +166,7 @@ public class TvShowsController : BaseJellyfinApiController
             .AddClientFields(User)
             .AddAdditionalDtoOptions(enableImages, enableUserData, imageTypeLimit, enableImageTypes);
 
-        var itemsResult = _libraryManager.GetItemList(new InternalItemsQuery(user)
+        var itemsResult = _itemService.GetItemList(new InternalItemsQuery(user)
         {
             IncludeItemTypes = new[] { BaseItemKind.Episode },
             OrderBy = new[] { (ItemSortBy.PremiereDate, SortOrder.Ascending), (ItemSortBy.SortName, SortOrder.Ascending) },

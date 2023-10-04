@@ -11,8 +11,8 @@ namespace Emby.Server.Implementations.Images
 {
     public class MusicAlbumImageProvider : BaseFolderImageProvider<MusicAlbum>
     {
-        public MusicAlbumImageProvider(IFileSystem fileSystem, IProviderManager providerManager, IApplicationPaths applicationPaths, IImageProcessor imageProcessor, ILibraryManager libraryManager)
-            : base(fileSystem, providerManager, applicationPaths, imageProcessor, libraryManager)
+        public MusicAlbumImageProvider(IFileSystem fileSystem, IProviderManager providerManager, IApplicationPaths applicationPaths, IImageProcessor imageProcessor, IItemService itemService)
+            : base(fileSystem, providerManager, applicationPaths, imageProcessor, itemService)
         {
         }
     }

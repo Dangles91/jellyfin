@@ -23,16 +23,22 @@ public class FilterController : BaseJellyfinApiController
 {
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FilterController"/> class.
     /// </summary>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    public FilterController(ILibraryManager libraryManager, IUserManager userManager)
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    public FilterController(
+        ILibraryManager libraryManager,
+        IUserManager userManager,
+        IItemService itemService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -197,7 +203,7 @@ public class FilterController : BaseJellyfinApiController
                 || includeItemTypes[0] == BaseItemKind.MusicArtist
                 || includeItemTypes[0] == BaseItemKind.Audio))
         {
-            filters.Genres = _libraryManager.GetMusicGenres(genreQuery).Items.Select(i => new NameGuidPair
+            filters.Genres = _itemService.GetMusicGenres(genreQuery).Items.Select(i => new NameGuidPair
             {
                 Name = i.Item.Name,
                 Id = i.Item.Id
@@ -205,7 +211,7 @@ public class FilterController : BaseJellyfinApiController
         }
         else
         {
-            filters.Genres = _libraryManager.GetGenres(genreQuery).Items.Select(i => new NameGuidPair
+            filters.Genres = _itemService.GetGenres(genreQuery).Items.Select(i => new NameGuidPair
             {
                 Name = i.Item.Name,
                 Id = i.Item.Id

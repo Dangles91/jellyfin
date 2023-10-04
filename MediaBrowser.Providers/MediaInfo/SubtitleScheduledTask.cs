@@ -29,19 +29,28 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly ISubtitleManager _subtitleManager;
         private readonly ILogger<SubtitleScheduledTask> _logger;
         private readonly ILocalizationManager _localization;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IItemService _itemService;
 
         public SubtitleScheduledTask(
             ILibraryManager libraryManager,
             IServerConfigurationManager config,
             ISubtitleManager subtitleManager,
             ILogger<SubtitleScheduledTask> logger,
-            ILocalizationManager localization)
+            ILocalizationManager localization,
+            ILibraryOptionsManager libraryOptionsManager,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemService itemService)
         {
             _libraryManager = libraryManager;
             _config = config;
             _subtitleManager = subtitleManager;
             _logger = logger;
             _localization = localization;
+            _libraryOptionsManager = libraryOptionsManager;
+            _libraryRootFolderManager = libraryRootFolderManager;
+            _itemService = itemService;
         }
 
         public string Name => _localization.GetLocalizedString("TaskDownloadMissingSubtitles");
@@ -72,9 +81,9 @@ namespace MediaBrowser.Providers.MediaInfo
 
             var dict = new Dictionary<Guid, BaseItem>();
 
-            foreach (var library in _libraryManager.RootFolder.Children.ToList())
+            foreach (var library in _libraryRootFolderManager.GetRootFolder().Children.ToList())
             {
-                var libraryOptions = _libraryManager.GetLibraryOptions(library);
+                var libraryOptions = _libraryOptionsManager.GetLibraryOptions(library);
 
                 string[] subtitleDownloadLanguages;
                 bool skipIfEmbeddedSubtitlesPresent;
@@ -122,7 +131,7 @@ namespace MediaBrowser.Providers.MediaInfo
                         query.HasNoExternalSubtitleTrackWithLanguage = lang;
                     }
 
-                    var videosByLanguage = _libraryManager.GetItemList(query);
+                    var videosByLanguage = _itemService.GetItemList(query);
 
                     foreach (var video in videosByLanguage)
                     {
@@ -165,7 +174,7 @@ namespace MediaBrowser.Providers.MediaInfo
         {
             var mediaStreams = video.GetMediaStreams();
 
-            var libraryOptions = _libraryManager.GetLibraryOptions(video);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
 
             string[] subtitleDownloadLanguages;
             bool skipIfEmbeddedSubtitlesPresent;

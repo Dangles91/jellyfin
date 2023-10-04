@@ -455,28 +455,37 @@ namespace MediaBrowser.Controller.Entities
         [JsonIgnore]
         public Guid ParentId { get; set; }
 
-        /// <summary>
-        /// Gets or sets the logger.
-        /// </summary>
-        public static ILogger<BaseItem> Logger { get; set; }
+        protected static ILogger<BaseItem> Logger { get; set; }
 
-        public static ILibraryManager LibraryManager { get; set; }
+        protected static ILibraryManager LibraryManager { get; set; }
 
-        public static IServerConfigurationManager ConfigurationManager { get; set; }
+        protected static IServerConfigurationManager ConfigurationManager { get; set; }
 
-        public static IProviderManager ProviderManager { get; set; }
+        protected static IProviderManager ProviderManager { get; set; }
 
-        public static ILocalizationManager LocalizationManager { get; set; }
+        protected static ILocalizationManager LocalizationManager { get; set; }
 
-        public static IItemRepository ItemRepository { get; set; }
+        protected static IFileSystem FileSystem { get; set; }
 
-        public static IFileSystem FileSystem { get; set; }
+        protected static IUserDataManager UserDataManager { get; set; }
 
-        public static IUserDataManager UserDataManager { get; set; }
+        protected static IChannelManager ChannelManager { get; set; }
 
-        public static IChannelManager ChannelManager { get; set; }
+        protected static IMediaSourceManager MediaSourceManager { get; set; }
 
-        public static IMediaSourceManager MediaSourceManager { get; set; }
+        protected static IItemService ItemService { get; set; }
+
+        protected static ILibraryRootFolderManager LibraryRootFolderManager { get; set; }
+
+        protected static IItemPathResolver ItemPathResolver { get; set; }
+
+        protected static ILibraryOptionsManager LibraryOptionsManager { get; set; }
+
+        protected static ILibraryCollectionManager LibraryCollectionManager { get; set; }
+
+        protected static IItemContentTypeProvider ItemContentTypeProvider { get; set; }
+
+        protected static IUserViewBuilder UserViewBuilder { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the forced sort.
@@ -775,6 +784,61 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual bool SupportsExternalTransfer => false;
 
+        /// <summary>
+        /// Initializes static members of the <see cref="BaseItem"/> class.
+        /// Configure dependencies.
+        /// </summary>
+        /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+        /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
+        /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
+        /// <param name="localizationManager">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+        /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
+        /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
+        /// <param name="channelManager">Instance of the <see cref="IChannelManager"/> interface.</param>
+        /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
+        /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+        /// <param name="libraryRootFolderManager">Instance of the <see cref="ILibraryRootFolderManager"/> interface.</param>
+        /// <param name="itemPathResolver">Instance of the <see cref="IItemPathResolver"/> interface.</param>
+        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="libraryCollectionManager">Instance of the <see cref="ILibraryCollectionManager"/> interface.</param>
+        /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
+        /// <param name="userViewBuilder">Instance of the <see cref="IUserViewBuilder"/> interface.</param>
+        public static void ConfigureDependencies(
+            ILogger<BaseItem> logger,
+            ILibraryManager libraryManager,
+            IServerConfigurationManager serverConfigurationManager,
+            IProviderManager providerManager,
+            ILocalizationManager localizationManager,
+            IFileSystem fileSystem,
+            IUserDataManager userDataManager,
+            IChannelManager channelManager,
+            IMediaSourceManager mediaSourceManager,
+            IItemService itemService,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemPathResolver itemPathResolver,
+            ILibraryOptionsManager libraryOptionsManager,
+            ILibraryCollectionManager libraryCollectionManager,
+            IItemContentTypeProvider itemContentTypeProvider,
+            IUserViewBuilder userViewBuilder)
+        {
+            Logger = logger;
+            LibraryManager = libraryManager;
+            ConfigurationManager = serverConfigurationManager;
+            ProviderManager = providerManager;
+            LocalizationManager = localizationManager;
+            FileSystem = fileSystem;
+            UserDataManager = userDataManager;
+            MediaSourceManager = mediaSourceManager;
+            ItemService = itemService;
+            LibraryRootFolderManager = libraryRootFolderManager;
+            ItemPathResolver = itemPathResolver;
+            LibraryOptionsManager = libraryOptionsManager;
+            LibraryCollectionManager = libraryCollectionManager;
+            ItemContentTypeProvider = itemContentTypeProvider;
+            UserViewBuilder = userViewBuilder;
+        }
+
         public virtual double GetDefaultPrimaryImageAspectRatio()
         {
             return 0;
@@ -809,7 +873,7 @@ namespace MediaBrowser.Controller.Entities
                 return allowed.Contains(ChannelId);
             }
 
-            var collectionFolders = LibraryManager.GetCollectionFolders(this, allCollectionFolders);
+            var collectionFolders = LibraryCollectionManager.GetCollectionFolders(this, allCollectionFolders);
 
             foreach (var folder in collectionFolders)
             {
@@ -1302,7 +1366,7 @@ namespace MediaBrowser.Controller.Entities
                     return true;
                 }
 
-                var itemCollectionFolders = LibraryManager.GetCollectionFolders(this).Select(i => i.Id).ToList();
+                var itemCollectionFolders = LibraryCollectionManager.GetCollectionFolders(this).Select(i => i.Id).ToList();
 
                 if (itemCollectionFolders.Count > 0)
                 {
@@ -1441,14 +1505,14 @@ namespace MediaBrowser.Controller.Entities
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryManager.GetCollectionFolders(this)
+                lang = LibraryCollectionManager.GetCollectionFolders(this)
                     .Select(i => i.PreferredMetadataLanguage)
                     .FirstOrDefault(i => !string.IsNullOrEmpty(i));
             }
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryManager.GetLibraryOptions(this).PreferredMetadataLanguage;
+                lang = LibraryOptionsManager.GetLibraryOptions(this).PreferredMetadataLanguage;
             }
 
             if (string.IsNullOrEmpty(lang))
@@ -1476,14 +1540,14 @@ namespace MediaBrowser.Controller.Entities
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryManager.GetCollectionFolders(this)
+                lang = LibraryCollectionManager.GetCollectionFolders(this)
                     .Select(i => i.PreferredMetadataCountryCode)
                     .FirstOrDefault(i => !string.IsNullOrEmpty(i));
             }
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryManager.GetLibraryOptions(this).MetadataCountryCode;
+                lang = LibraryOptionsManager.GetLibraryOptions(this).MetadataCountryCode;
             }
 
             if (string.IsNullOrEmpty(lang))
@@ -1501,7 +1565,7 @@ namespace MediaBrowser.Controller.Entities
                 return false;
             }
 
-            var libraryOptions = LibraryManager.GetLibraryOptions(this);
+            var libraryOptions = LibraryOptionsManager.GetLibraryOptions(this);
 
             return libraryOptions.SaveLocalMetadata;
         }
@@ -1713,7 +1777,7 @@ namespace MediaBrowser.Controller.Entities
             {
                 path = FileSystem.MakeAbsolutePath(ContainingFolderPath, path);
 
-                var itemByPath = LibraryManager.FindByPath(path, null);
+                var itemByPath = ItemService.FindItemByPath(path, null);
 
                 if (itemByPath is null)
                 {
@@ -1964,7 +2028,7 @@ namespace MediaBrowser.Controller.Entities
         }
 
         public virtual Task UpdateToRepositoryAsync(ItemUpdateType updateReason, CancellationToken cancellationToken)
-         => LibraryManager.UpdateItemAsync(this, GetParent(), updateReason, cancellationToken);
+         => ItemService.UpdateItemAsync(this, GetParent(), updateReason, cancellationToken);
 
         /// <summary>
         /// Validates that images within the item are still on the filesystem.
@@ -2017,7 +2081,7 @@ namespace MediaBrowser.Controller.Entities
         {
             if (imageType == ImageType.Chapter)
             {
-                var chapter = ItemRepository.GetChapter(this, imageIndex);
+                var chapter = ItemService.GetChapter(this, imageIndex);
 
                 if (chapter is null)
                 {
@@ -2067,7 +2131,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (image.Type == ImageType.Chapter)
             {
-                var chapters = ItemRepository.GetChapters(this);
+                var chapters = ItemService.GetChapters(this);
                 for (var i = 0; i < chapters.Count; i++)
                 {
                     if (chapters[i].ImagePath == image.Path)
@@ -2431,7 +2495,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (video is null)
             {
-                video = LibraryManager.ResolvePath(FileSystem.GetFileSystemInfo(path)) as Video;
+                video = ItemPathResolver.ResolvePath(FileSystem.GetFileSystemInfo(path)) as Video;
 
                 newOptions.ForceSave = true;
             }
@@ -2466,7 +2530,7 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual IEnumerable<Guid> GetAncestorIds()
         {
-            return GetParents().Select(i => i.Id).Concat(LibraryManager.GetCollectionFolders(this).Select(i => i.Id));
+            return GetParents().Select(i => i.Id).Concat(LibraryCollectionManager.GetCollectionFolders(this).Select(i => i.Id));
         }
 
         public BaseItem GetTopParent()
@@ -2575,6 +2639,39 @@ namespace MediaBrowser.Controller.Entities
         public virtual long GetRunTimeTicksForPlayState()
         {
             return RunTimeTicks ?? 0;
+        }
+
+        /// <summary>
+        /// Sets the image path.
+        /// </summary>
+        /// <param name="imageType">Type of the image.</param>
+        /// <param name="file">The file.</param>
+        public void SetImagePath(ImageType imageType, string file)
+        {
+            if (file.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                SetImage(
+                    new ItemImageInfo
+                    {
+                        Path = file,
+                        Type = imageType
+                    },
+                    0);
+            }
+            else
+            {
+                SetImagePath(imageType, FileSystem.GetFileInfo(file));
+            }
+        }
+
+        /// <summary>
+        /// Sets the image path.
+        /// </summary>
+        /// <param name="imageType">Type of the image.</param>
+        /// <param name="file">The file.</param>
+        public void SetImagePath(ImageType imageType, FileSystemMetadata file)
+        {
+            SetImagePath(imageType, 0, file);
         }
 
         /// <inheritdoc />

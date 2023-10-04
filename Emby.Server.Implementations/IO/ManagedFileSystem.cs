@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller;
 using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 
@@ -41,6 +42,8 @@ namespace Emby.Server.Implementations.IO
             IEnumerable<IShortcutHandler> shortcutHandlers)
         {
             _logger = logger;
+            _applicationPaths = applicationPaths;
+            _serverApplicationPaths = serverApplicationPaths;
             _tempPath = applicationPaths.TempDirectory;
             _shortcutHandlers = shortcutHandlers.ToList();
         }
@@ -665,6 +668,22 @@ namespace Emby.Server.Implementations.IO
                 // Don't skip any files.
                 AttributesToSkip = 0
             };
+        }
+
+        public string ExpandVirtualPath(string path)
+        {
+            var appPaths = _serverApplicationPaths;
+
+            return path.Replace(appPaths.VirtualDataPath, appPaths.DataPath, StringComparison.OrdinalIgnoreCase)
+                .Replace(appPaths.VirtualInternalMetadataPath, appPaths.InternalMetadataPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public string ReverseVirtualPath(string path)
+        {
+            var appPaths = _serverApplicationPaths;
+
+            return path.Replace(appPaths.DataPath, appPaths.VirtualDataPath, StringComparison.OrdinalIgnoreCase)
+                .Replace(appPaths.InternalMetadataPath, appPaths.VirtualInternalMetadataPath, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

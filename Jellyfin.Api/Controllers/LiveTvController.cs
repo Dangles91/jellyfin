@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
@@ -47,6 +47,8 @@ public class LiveTvController : BaseJellyfinApiController
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IConfigurationManager _configurationManager;
     private readonly TranscodingJobHelper _transcodingJobHelper;
+    private readonly ISessionManager _sessionManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LiveTvController"/> class.
@@ -59,6 +61,8 @@ public class LiveTvController : BaseJellyfinApiController
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="configurationManager">Instance of the <see cref="IConfigurationManager"/> interface.</param>
     /// <param name="transcodingJobHelper">Instance of the <see cref="TranscodingJobHelper"/> class.</param>
+    /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public LiveTvController(
         ILiveTvManager liveTvManager,
         IUserManager userManager,
@@ -67,7 +71,9 @@ public class LiveTvController : BaseJellyfinApiController
         IDtoService dtoService,
         IMediaSourceManager mediaSourceManager,
         IConfigurationManager configurationManager,
-        TranscodingJobHelper transcodingJobHelper)
+        TranscodingJobHelper transcodingJobHelper,
+        ISessionManager sessionManager,
+        IItemService itemService)
     {
         _liveTvManager = liveTvManager;
         _userManager = userManager;
@@ -77,6 +83,8 @@ public class LiveTvController : BaseJellyfinApiController
         _mediaSourceManager = mediaSourceManager;
         _configurationManager = configurationManager;
         _transcodingJobHelper = transcodingJobHelper;
+        _sessionManager = sessionManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -766,7 +774,7 @@ public class LiveTvController : BaseJellyfinApiController
             return NotFound();
         }
 
-        _libraryManager.DeleteItem(item, new DeleteOptions
+        _itemService.DeleteItem(item, new DeleteOptions
         {
             DeleteFileLocation = false
         });

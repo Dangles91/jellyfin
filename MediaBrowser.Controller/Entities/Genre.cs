@@ -72,7 +72,7 @@ namespace MediaBrowser.Controller.Entities
                 BaseItemKind.MusicArtist
             };
 
-            return LibraryManager.GetItemList(query);
+            return ItemService.GetItemList(query);
         }
 
         public static string GetPath(string name)

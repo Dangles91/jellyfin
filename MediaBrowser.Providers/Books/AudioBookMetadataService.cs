@@ -18,8 +18,9 @@ namespace MediaBrowser.Providers.Books
             ILogger<AudioBookMetadataService> logger,
             IProviderManager providerManager,
             IFileSystem fileSystem,
-            ILibraryManager libraryManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
         }
 

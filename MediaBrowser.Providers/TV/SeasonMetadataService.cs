@@ -22,8 +22,9 @@ namespace MediaBrowser.Providers.TV
             ILogger<SeasonMetadataService> logger,
             IProviderManager providerManager,
             IFileSystem fileSystem,
-            ILibraryManager libraryManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
         }
 
@@ -37,7 +38,7 @@ namespace MediaBrowser.Providers.TV
 
             if (item.IndexNumber == 0 && !item.IsLocked && !item.LockedFields.Contains(MetadataField.Name))
             {
-                var seasonZeroDisplayName = LibraryManager.GetLibraryOptions(item).SeasonZeroDisplayName;
+                var seasonZeroDisplayName = LibraryOptionsManager.GetLibraryOptions(item).SeasonZeroDisplayName;
 
                 if (!string.Equals(item.Name, seasonZeroDisplayName, StringComparison.OrdinalIgnoreCase))
                 {

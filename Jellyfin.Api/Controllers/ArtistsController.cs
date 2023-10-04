@@ -28,6 +28,7 @@ public class ArtistsController : BaseJellyfinApiController
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IDtoService _dtoService;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ArtistsController"/> class.
@@ -35,14 +36,17 @@ public class ArtistsController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public ArtistsController(
         ILibraryManager libraryManager,
         IUserManager userManager,
-        IDtoService dtoService)
+        IDtoService dtoService,
+        IItemService itemService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _dtoService = dtoService;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -177,7 +181,7 @@ public class ArtistsController : BaseJellyfinApiController
             {
                 try
                 {
-                    return _libraryManager.GetStudio(i);
+                    return _itemService.GetStudio(i);
                 }
                 catch
                 {
@@ -220,7 +224,7 @@ public class ArtistsController : BaseJellyfinApiController
             }
         }
 
-        var result = _libraryManager.GetArtists(query);
+        var result = _itemService.GetArtists(query);
 
         var dtos = result.Items.Select(i =>
         {
@@ -381,7 +385,7 @@ public class ArtistsController : BaseJellyfinApiController
             {
                 try
                 {
-                    return _libraryManager.GetStudio(i);
+                    return _itemService.GetStudio(i);
                 }
                 catch
                 {
@@ -424,7 +428,7 @@ public class ArtistsController : BaseJellyfinApiController
             }
         }
 
-        var result = _libraryManager.GetAlbumArtists(query);
+        var result = _itemService.GetAlbumArtists(query);
 
         var dtos = result.Items.Select(i =>
         {
@@ -467,7 +471,7 @@ public class ArtistsController : BaseJellyfinApiController
         userId = RequestHelpers.GetUserId(User, userId);
         var dtoOptions = new DtoOptions().AddClientFields(User);
 
-        var item = _libraryManager.GetArtist(name, dtoOptions);
+        var item = _itemService.GetArtist(name, dtoOptions);
 
         if (!userId.Value.Equals(default))
         {

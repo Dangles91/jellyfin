@@ -92,7 +92,7 @@ namespace MediaBrowser.Controller.Entities.Audio
                 query.ArtistIds = new[] { Id };
             }
 
-            return LibraryManager.GetItemList(query);
+            return ItemService.GetItemList(query);
         }
 
         public override int GetChildCount(User user)

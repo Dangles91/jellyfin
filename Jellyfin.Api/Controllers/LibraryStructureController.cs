@@ -32,6 +32,7 @@ public class LibraryStructureController : BaseJellyfinApiController
     private readonly IServerApplicationPaths _appPaths;
     private readonly ILibraryManager _libraryManager;
     private readonly ILibraryMonitor _libraryMonitor;
+    private readonly ILibraryOptionsManager _libraryOptionsManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LibraryStructureController"/> class.
@@ -39,14 +40,17 @@ public class LibraryStructureController : BaseJellyfinApiController
     /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="libraryMonitor">Instance of <see cref="ILibraryMonitor"/> interface.</param>
+    /// <param name="libraryOptionsManager">Instance of <see cref="ILibraryOptionsManager"/> interface.</param>
     public LibraryStructureController(
         IServerConfigurationManager serverConfigurationManager,
         ILibraryManager libraryManager,
-        ILibraryMonitor libraryMonitor)
+        ILibraryMonitor libraryMonitor,
+        ILibraryOptionsManager libraryOptionsManager)
     {
         _appPaths = serverConfigurationManager.ApplicationPaths;
         _libraryManager = libraryManager;
         _libraryMonitor = libraryMonitor;
+        _libraryOptionsManager = libraryOptionsManager;
     }
 
     /// <summary>
@@ -172,7 +176,7 @@ public class LibraryStructureController : BaseJellyfinApiController
         }
         finally
         {
-            CollectionFolder.OnCollectionFolderChange();
+            _libraryOptionsManager.ClearOptionsCache();
 
             Task.Run(async () =>
             {
@@ -320,7 +324,7 @@ public class LibraryStructureController : BaseJellyfinApiController
     {
         var collectionFolder = (CollectionFolder)_libraryManager.GetItemById(request.Id);
 
-        collectionFolder.UpdateLibraryOptions(request.LibraryOptions);
+        _libraryOptionsManager.UpdateLibraryOptions(collectionFolder, request.LibraryOptions);
         return NoContent();
     }
 }

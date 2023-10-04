@@ -86,7 +86,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
         public override string CreatePresentationUniqueKey()
         {
-            if (LibraryManager.GetLibraryOptions(this).EnableAutomaticSeriesGrouping)
+            if (LibraryOptionsManager.GetLibraryOptions(this).EnableAutomaticSeriesGrouping)
             {
                 var userdatakeys = GetUserDataKeys();
 
@@ -107,7 +107,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 key += "-" + lang;
             }
 
-            var folders = LibraryManager.GetCollectionFolders(this)
+            var folders = LibraryCollectionManager.GetCollectionFolders(this)
                 .Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture))
                 .ToArray();
 
@@ -128,7 +128,7 @@ namespace MediaBrowser.Controller.Entities.TV
         {
             var seriesKey = GetUniqueSeriesKey(this);
 
-            var result = LibraryManager.GetCount(new InternalItemsQuery(user)
+            var result = ItemService.GetCount(new InternalItemsQuery(user)
             {
                 AncestorWithPresentationUniqueKey = null,
                 SeriesPresentationUniqueKey = seriesKey,
@@ -165,7 +165,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
             query.IsVirtualItem = false;
             query.Limit = 0;
-            var totalRecordCount = LibraryManager.GetCount(query);
+            var totalRecordCount = ItemService.GetCount(query);
 
             return totalRecordCount;
         }
@@ -210,7 +210,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
             SetSeasonQueryOptions(query, user);
 
-            return LibraryManager.GetItemList(query);
+            return ItemService.GetItemList(query);
         }
 
         private void SetSeasonQueryOptions(InternalItemsQuery query, User user)
@@ -249,12 +249,12 @@ namespace MediaBrowser.Controller.Entities.TV
                 }
 
                 query.IsVirtualItem = false;
-                return LibraryManager.GetItemsResult(query);
+                return ItemService.GetItemsResult(query);
             }
 
             SetSeasonQueryOptions(query, user);
 
-            return LibraryManager.GetItemsResult(query);
+            return ItemService.GetItemsResult(query);
         }
 
         public IEnumerable<BaseItem> GetEpisodes(User user, DtoOptions options)
@@ -275,7 +275,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 query.IsMissing = false;
             }
 
-            var allItems = LibraryManager.GetItemList(query);
+            var allItems = ItemService.GetItemList(query);
 
             var allSeriesEpisodes = allItems.OfType<Episode>().ToList();
 
@@ -381,7 +381,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 }
             }
 
-            var allItems = LibraryManager.GetItemList(query);
+            var allItems = ItemService.GetItemList(query);
 
             return GetSeasonEpisodes(parentSeason, user, allItems, options);
         }

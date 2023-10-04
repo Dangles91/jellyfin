@@ -54,6 +54,8 @@ public class LibraryController : BaseJellyfinApiController
     private readonly ILibraryMonitor _libraryMonitor;
     private readonly ILogger<LibraryController> _logger;
     private readonly IServerConfigurationManager _serverConfigurationManager;
+    private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LibraryController"/> class.
@@ -67,6 +69,8 @@ public class LibraryController : BaseJellyfinApiController
     /// <param name="libraryMonitor">Instance of the <see cref="ILibraryMonitor"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{LibraryController}"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
+    /// <param name="libraryRootFolderManager">Instance of the <see cref="ILibraryRootFolderManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public LibraryController(
         IProviderManager providerManager,
         ILibraryManager libraryManager,
@@ -76,7 +80,9 @@ public class LibraryController : BaseJellyfinApiController
         ILocalizationManager localization,
         ILibraryMonitor libraryMonitor,
         ILogger<LibraryController> logger,
-        IServerConfigurationManager serverConfigurationManager)
+        IServerConfigurationManager serverConfigurationManager,
+        ILibraryRootFolderManager libraryRootFolderManager,
+        IItemService itemService)
     {
         _providerManager = providerManager;
         _libraryManager = libraryManager;
@@ -87,6 +93,8 @@ public class LibraryController : BaseJellyfinApiController
         _libraryMonitor = libraryMonitor;
         _logger = logger;
         _serverConfigurationManager = serverConfigurationManager;
+        _libraryRootFolderManager = libraryRootFolderManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -151,8 +159,8 @@ public class LibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? (userId.Value.Equals(default)
-                ? _libraryManager.RootFolder
-                : _libraryManager.GetUserRootFolder())
+                ? _libraryRootFolderManager.GetRootFolder()
+                : _libraryRootFolderManager.GetUserRootFolder())
             : _libraryManager.GetItemById(itemId);
 
         if (item is null)
@@ -218,8 +226,8 @@ public class LibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? (userId.Value.Equals(default)
-                ? _libraryManager.RootFolder
-                : _libraryManager.GetUserRootFolder())
+                ? _libraryRootFolderManager.GetRootFolder()
+                : _libraryRootFolderManager.GetUserRootFolder())
             : _libraryManager.GetItemById(itemId);
 
         if (item is null)
@@ -357,10 +365,9 @@ public class LibraryController : BaseJellyfinApiController
             return Unauthorized("Unauthorized access");
         }
 
-        _libraryManager.DeleteItem(
+        _itemService.DeleteItem(
             item,
-            new DeleteOptions { DeleteFileLocation = true },
-            true);
+            new DeleteOptions { DeleteFileLocation = true });
 
         return NoContent();
     }
@@ -403,10 +410,9 @@ public class LibraryController : BaseJellyfinApiController
                 return Unauthorized("Unauthorized access");
             }
 
-            _libraryManager.DeleteItem(
+            _itemService.DeleteItem(
                 item,
-                new DeleteOptions { DeleteFileLocation = true },
-                true);
+                new DeleteOptions { DeleteFileLocation = true });
         }
 
         return NoContent();
@@ -506,7 +512,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<IEnumerable<string>> GetPhysicalPaths()
     {
-        return Ok(_libraryManager.RootFolder.Children
+        return Ok(_libraryRootFolderManager.GetRootFolder().Children
             .SelectMany(c => c.PhysicalLocations));
     }
 
@@ -521,7 +527,9 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<QueryResult<BaseItemDto>> GetMediaFolders([FromQuery] bool? isHidden)
     {
-        var items = _libraryManager.GetUserRootFolder().Children.Concat(_libraryManager.RootFolder.VirtualChildren).OrderBy(i => i.SortName).ToList();
+        var items = _libraryRootFolderManager.GetUserRootFolder().Children
+            .Concat(_libraryRootFolderManager.GetRootFolder().VirtualChildren)
+            .OrderBy(i => i.SortName).ToList();
 
         if (isHidden.HasValue)
         {
@@ -547,7 +555,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult PostUpdatedSeries([FromQuery] string? tvdbId)
     {
-        var series = _libraryManager.GetItemList(new InternalItemsQuery
+        var series = _itemService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Series },
             DtoOptions = new DtoOptions(false)
@@ -577,7 +585,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult PostUpdatedMovies([FromQuery] string? tmdbId, [FromQuery] string? imdbId)
     {
-        var movies = _libraryManager.GetItemList(new InternalItemsQuery
+        var movies = _itemService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Movie },
             DtoOptions = new DtoOptions(false)
@@ -703,8 +711,8 @@ public class LibraryController : BaseJellyfinApiController
         userId = RequestHelpers.GetUserId(User, userId);
         var item = itemId.Equals(default)
             ? (userId.Value.Equals(default)
-                ? _libraryManager.RootFolder
-                : _libraryManager.GetUserRootFolder())
+                ? _libraryRootFolderManager.GetRootFolder()
+                : _libraryRootFolderManager.GetUserRootFolder())
             : _libraryManager.GetItemById(itemId);
 
         if (item is null)
@@ -767,7 +775,7 @@ public class LibraryController : BaseJellyfinApiController
             query.ExcludeArtistIds = excludeArtistIds;
         }
 
-        List<BaseItem> itemsResult = _libraryManager.GetItemList(query);
+        List<BaseItem> itemsResult = _itemService.GetItemList(query);
 
         var returnList = _dtoService.GetBaseItemDtos(itemsResult, dtoOptions, user);
 
@@ -893,7 +901,7 @@ public class LibraryController : BaseJellyfinApiController
             }
         };
 
-        return _libraryManager.GetItemsResult(query).TotalRecordCount;
+        return _itemService.GetItemsResult(query).TotalRecordCount;
     }
 
     private BaseItem? TranslateParentItem(BaseItem item, User user)

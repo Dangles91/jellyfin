@@ -80,7 +80,7 @@ namespace MediaBrowser.Controller.Entities
                 PresetViews = query.PresetViews
             });
 
-            return UserViewBuilder.SortAndPage(result, null, query, LibraryManager, true);
+            return MediaBrowser.Controller.Entities.UserViewBuilder.SortAndPage(result, null, query, LibraryManager, true);
         }
 
         public override int GetChildCount(User user)
@@ -91,7 +91,7 @@ namespace MediaBrowser.Controller.Entities
         protected override IEnumerable<BaseItem> GetEligibleChildrenForRecursiveChildren(User user)
         {
             var list = base.GetEligibleChildrenForRecursiveChildren(user).ToList();
-            list.AddRange(LibraryManager.RootFolder.VirtualChildren);
+            list.AddRange(LibraryRootFolderManager.GetRootFolder().VirtualChildren);
 
             return list;
         }
@@ -134,7 +134,7 @@ namespace MediaBrowser.Controller.Entities
             // In theory this can be removed eventually.
             foreach (var item in Children)
             {
-                LibraryManager.RegisterItem(item);
+                ItemService.RegisterItemInCache(item);
             }
         }
     }

@@ -17,8 +17,9 @@ namespace MediaBrowser.Providers.MusicGenres
             ILogger<MusicGenreMetadataService> logger,
             IProviderManager providerManager,
             IFileSystem fileSystem,
-            ILibraryManager libraryManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
         }
     }

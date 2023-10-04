@@ -48,7 +48,6 @@ namespace Emby.Server.Implementations.LiveTv
 
         private readonly IServerConfigurationManager _config;
         private readonly ILogger<LiveTvManager> _logger;
-        private readonly IItemRepository _itemRepo;
         private readonly IUserManager _userManager;
         private readonly IDtoService _dtoService;
         private readonly IUserDataManager _userDataManager;
@@ -58,7 +57,8 @@ namespace Emby.Server.Implementations.LiveTv
         private readonly IFileSystem _fileSystem;
         private readonly IChannelManager _channelManager;
         private readonly LiveTvDtoService _tvDtoService;
-
+        private readonly IItemService _itemService;
+        private readonly ILibraryCollectionManager _libraryCollectionManager;
         private ILiveTvService[] _services = Array.Empty<ILiveTvService>();
         private ITunerHost[] _tunerHosts = Array.Empty<ITunerHost>();
         private IListingsProvider[] _listingProviders = Array.Empty<IListingsProvider>();
@@ -66,7 +66,6 @@ namespace Emby.Server.Implementations.LiveTv
         public LiveTvManager(
             IServerConfigurationManager config,
             ILogger<LiveTvManager> logger,
-            IItemRepository itemRepo,
             IUserDataManager userDataManager,
             IDtoService dtoService,
             IUserManager userManager,
@@ -75,11 +74,12 @@ namespace Emby.Server.Implementations.LiveTv
             ILocalizationManager localization,
             IFileSystem fileSystem,
             IChannelManager channelManager,
-            LiveTvDtoService liveTvDtoService)
+            LiveTvDtoService liveTvDtoService,
+            IItemService itemService,
+            ILibraryCollectionManager libraryCollectionManager)
         {
             _config = config;
             _logger = logger;
-            _itemRepo = itemRepo;
             _userManager = userManager;
             _libraryManager = libraryManager;
             _taskManager = taskManager;
@@ -89,6 +89,8 @@ namespace Emby.Server.Implementations.LiveTv
             _userDataManager = userDataManager;
             _channelManager = channelManager;
             _tvDtoService = liveTvDtoService;
+            _itemService = itemService;
+            _libraryCollectionManager = libraryCollectionManager;
         }
 
         public event EventHandler<GenericEventArgs<TimerEventInfo>> SeriesTimerCancelled;
@@ -214,7 +216,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             internalQuery.OrderBy = orderBy.ToArray();
 
-            return _libraryManager.GetItemsResult(internalQuery);
+            return _itemService.GetItemsResult(internalQuery);
         }
 
         public async Task<Tuple<MediaSourceInfo, ILiveStream>> GetChannelStream(string id, string mediaSourceId, List<ILiveStream> currentLiveStreams, CancellationToken cancellationToken)
@@ -510,11 +512,11 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (isNew)
             {
-                _libraryManager.CreateItem(item, parentFolder);
+                _itemService.CreateItem(item, parentFolder);
             }
             else if (forceUpdate)
             {
-                await _libraryManager.UpdateItemAsync(item, parentFolder, ItemUpdateType.MetadataImport, cancellationToken).ConfigureAwait(false);
+                await _itemService.UpdateItemAsync(item, parentFolder, ItemUpdateType.MetadataImport, cancellationToken).ConfigureAwait(false);
             }
 
             return item;
@@ -853,7 +855,7 @@ namespace Emby.Server.Implementations.LiveTv
                 }
             }
 
-            var queryResult = _libraryManager.QueryItems(internalQuery);
+            var queryResult = _itemService.QueryItems(internalQuery);
 
             var returnArray = _dtoService.GetBaseItemDtos(queryResult.Items, options, user);
 
@@ -891,7 +893,7 @@ namespace Emby.Server.Implementations.LiveTv
                 internalQuery.Limit = Math.Max(query.Limit.Value * 4, 200);
             }
 
-            var programList = _libraryManager.QueryItems(internalQuery).Items;
+            var programList = _itemService.QueryItems(internalQuery).Items;
             var totalCount = programList.Count;
 
             var orderedPrograms = programList.Cast<LiveTvProgram>().OrderBy(i => i.StartDate.Date);
@@ -1170,7 +1172,7 @@ namespace Emby.Server.Implementations.LiveTv
 
                     var channelPrograms = (await service.GetProgramsAsync(currentChannel.ExternalId, start, end, cancellationToken).ConfigureAwait(false)).ToList();
 
-                    var existingPrograms = _libraryManager.GetItemList(new InternalItemsQuery
+                    var existingPrograms = _itemService.GetItemList(new InternalItemsQuery
                     {
                         IncludeItemTypes = new[] { BaseItemKind.LiveTvProgram },
                         ChannelIds = new Guid[] { currentChannel.Id },
@@ -1207,16 +1209,16 @@ namespace Emby.Server.Implementations.LiveTv
 
                     if (newPrograms.Count > 0)
                     {
-                        _libraryManager.CreateItems(newPrograms, null, cancellationToken);
+                        _itemService.CreateItems(newPrograms, null, cancellationToken);
                     }
 
                     if (updatedPrograms.Count > 0)
                     {
-                        await _libraryManager.UpdateItemsAsync(
+                        _itemService.UpdateItems(
                             updatedPrograms,
                             currentChannel,
                             ItemUpdateType.MetadataImport,
-                            cancellationToken).ConfigureAwait(false);
+                            cancellationToken);
                     }
 
                     currentChannel.IsMovie = isMovie;
@@ -1278,18 +1280,17 @@ namespace Emby.Server.Implementations.LiveTv
 
                 if (!currentIdList.Contains(itemId))
                 {
-                    var item = _libraryManager.GetItemById(itemId);
+                    var item = _itemService.GetItemById(itemId);
 
                     if (item is not null)
                     {
-                        _libraryManager.DeleteItem(
+                        _itemService.DeleteItem(
                             item,
                             new DeleteOptions
                             {
                                 DeleteFileLocation = false,
                                 DeleteFromExternalProvider = false
-                            },
-                            false);
+                            });
                     }
                 }
 
@@ -1387,7 +1388,7 @@ namespace Emby.Server.Implementations.LiveTv
                 dtoOptions.Fields = dtoOptions.Fields.Concat(new[] { ItemFields.Tags }).Distinct().ToArray();
             }
 
-            var result = _libraryManager.GetItemsResult(new InternalItemsQuery(user)
+            var result = _itemService.GetItemsResult(new InternalItemsQuery(user)
             {
                 MediaTypes = new[] { MediaType.Video },
                 Recursive = true,
@@ -1855,7 +1856,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             var channelIds = items.Select(i => i.Channel.Id).Distinct().ToArray();
 
-            var programs = options.AddCurrentProgram ? _libraryManager.GetItemList(new InternalItemsQuery(user)
+            var programs = options.AddCurrentProgram ? _itemService.GetItemList(new InternalItemsQuery(user)
             {
                 IncludeItemTypes = new[] { BaseItemKind.LiveTvProgram },
                 ChannelIds = channelIds,
@@ -2387,9 +2388,9 @@ namespace Emby.Server.Implementations.LiveTv
             var folders = EmbyTV.EmbyTV.Current.GetRecordingFolders()
                 .SelectMany(i => i.Locations)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(i => _libraryManager.FindByPath(i, true))
+                .Select(i => _itemService.FindItemByPath(i, true))
                 .Where(i => i is not null && i.IsVisibleStandalone(user))
-                .SelectMany(i => _libraryManager.GetCollectionFolders(i))
+                .SelectMany(i => _libraryCollectionManager.GetCollectionFolders(i))
                 .DistinctBy(x => x.Id)
                 .OrderBy(i => i.SortName)
                 .ToList();

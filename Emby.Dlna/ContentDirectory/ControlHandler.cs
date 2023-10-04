@@ -41,12 +41,12 @@ namespace Emby.Dlna.ContentDirectory
         private const string NsDlna = "urn:schemas-dlna-org:metadata-1-0/";
         private const string NsUpnp = "urn:schemas-upnp-org:metadata-1-0/upnp/";
 
-        private readonly ILibraryManager _libraryManager;
         private readonly IUserDataManager _userDataManager;
         private readonly User _user;
         private readonly IUserViewManager _userViewManager;
         private readonly ITVSeriesManager _tvSeriesManager;
-
+        private readonly IItemService _itemService;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly int _systemUpdateId;
 
         private readonly DidlBuilder _didlBuilder;
@@ -57,7 +57,6 @@ namespace Emby.Dlna.ContentDirectory
         /// Initializes a new instance of the <see cref="ControlHandler"/> class.
         /// </summary>
         /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        /// <param name="libraryManager">The <see cref="ILibraryManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="serverAddress">The server address to use in this instance> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="accessToken">The <see cref="string"/> for use with the <see cref="ControlHandler"/> instance.</param>
@@ -71,9 +70,10 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="userViewManager">The <see cref="IUserViewManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
+        /// <param name="itemService">The instance of <see cref="IItemService"/> for use with the <see cref="ControlHandler"/> instance.</param>
+        /// <param name="libraryRootFolderManager">The instance of <see cref="ILibraryRootFolderManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         public ControlHandler(
             ILogger logger,
-            ILibraryManager libraryManager,
             DeviceProfile profile,
             string serverAddress,
             string accessToken,
@@ -86,15 +86,18 @@ namespace Emby.Dlna.ContentDirectory
             IMediaSourceManager mediaSourceManager,
             IUserViewManager userViewManager,
             IMediaEncoder mediaEncoder,
-            ITVSeriesManager tvSeriesManager)
+            ITVSeriesManager tvSeriesManager,
+            IItemService itemService,
+            ILibraryRootFolderManager libraryRootFolderManager)
             : base(config, logger)
         {
-            _libraryManager = libraryManager;
             _userDataManager = userDataManager;
             _user = user;
             _systemUpdateId = systemUpdateId;
             _userViewManager = userViewManager;
             _tvSeriesManager = tvSeriesManager;
+            _itemService = itemService;
+            _libraryRootFolderManager = libraryRootFolderManager;
             _profile = profile;
 
             _didlBuilder = new DidlBuilder(
@@ -108,7 +111,7 @@ namespace Emby.Dlna.ContentDirectory
                 mediaSourceManager,
                 Logger,
                 mediaEncoder,
-                libraryManager);
+                itemService);
         }
 
         /// <inheritdoc />
@@ -634,7 +637,7 @@ namespace Emby.Dlna.ContentDirectory
                 OrderBy = GetOrderBy(sort, false)
             };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(startIndex, result);
         }
@@ -772,7 +775,7 @@ namespace Emby.Dlna.ContentDirectory
         /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
         private QueryResult<ServerItem> GetFolders(User user, int? startIndex, int? limit)
         {
-            var folders = _libraryManager.GetUserRootFolder().GetChildren(user, true);
+            var folders = _libraryRootFolderManager.GetUserRootFolder().GetChildren(user, true);
             var totalRecordCount = folders.Count;
             // Handle paging
             var items = folders
@@ -867,7 +870,7 @@ namespace Emby.Dlna.ContentDirectory
             query.IsResumable = true;
             query.Limit ??= 10;
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(query.StartIndex, result);
         }
@@ -882,7 +885,7 @@ namespace Emby.Dlna.ContentDirectory
             query.Recursive = true;
             query.IncludeItemTypes = new[] { BaseItemKind.BoxSet };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(query.StartIndex, result);
         }
@@ -902,7 +905,7 @@ namespace Emby.Dlna.ContentDirectory
             query.IsFavorite = isFavorite;
             query.IncludeItemTypes = new[] { itemType };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(query.StartIndex, result);
         }
@@ -919,7 +922,7 @@ namespace Emby.Dlna.ContentDirectory
             // Don't sort
             query.OrderBy = Array.Empty<(string, SortOrder)>();
             query.AncestorIds = new[] { parent.Id };
-            var genresResult = _libraryManager.GetGenres(query);
+            var genresResult = _itemService.GetGenres(query);
 
             return ToResult(query.StartIndex, genresResult);
         }
@@ -935,7 +938,7 @@ namespace Emby.Dlna.ContentDirectory
             // Don't sort
             query.OrderBy = Array.Empty<(string, SortOrder)>();
             query.AncestorIds = new[] { parent.Id };
-            var genresResult = _libraryManager.GetMusicGenres(query);
+            var genresResult = _itemService.GetMusicGenres(query);
 
             return ToResult(query.StartIndex, genresResult);
         }
@@ -951,7 +954,7 @@ namespace Emby.Dlna.ContentDirectory
             // Don't sort
             query.OrderBy = Array.Empty<(string, SortOrder)>();
             query.AncestorIds = new[] { parent.Id };
-            var artists = _libraryManager.GetAlbumArtists(query);
+            var artists = _itemService.GetAlbumArtists(query);
 
             return ToResult(query.StartIndex, artists);
         }
@@ -967,7 +970,7 @@ namespace Emby.Dlna.ContentDirectory
             // Don't sort
             query.OrderBy = Array.Empty<(string, SortOrder)>();
             query.AncestorIds = new[] { parent.Id };
-            var artists = _libraryManager.GetArtists(query);
+            var artists = _itemService.GetArtists(query);
             return ToResult(query.StartIndex, artists);
         }
 
@@ -983,7 +986,7 @@ namespace Emby.Dlna.ContentDirectory
             query.OrderBy = Array.Empty<(string, SortOrder)>();
             query.AncestorIds = new[] { parent.Id };
             query.IsFavorite = true;
-            var artists = _libraryManager.GetArtists(query);
+            var artists = _itemService.GetArtists(query);
             return ToResult(query.StartIndex, artists);
         }
 
@@ -998,7 +1001,7 @@ namespace Emby.Dlna.ContentDirectory
             query.IncludeItemTypes = new[] { BaseItemKind.Playlist };
             query.Recursive = true;
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(query.StartIndex, result);
         }
@@ -1075,7 +1078,7 @@ namespace Emby.Dlna.ContentDirectory
                 OrderBy = GetOrderBy(sort, false)
             };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(startIndex, result);
         }
@@ -1106,7 +1109,7 @@ namespace Emby.Dlna.ContentDirectory
                 OrderBy = GetOrderBy(sort, false)
             };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(startIndex, result);
         }
@@ -1133,7 +1136,7 @@ namespace Emby.Dlna.ContentDirectory
                 OrderBy = GetOrderBy(sort, false)
             };
 
-            var result = _libraryManager.GetItemsResult(query);
+            var result = _itemService.GetItemsResult(query);
 
             return ToResult(startIndex, result);
         }
@@ -1216,7 +1219,7 @@ namespace Emby.Dlna.ContentDirectory
         private ServerItem GetItemFromObjectId(string id)
         {
             return DidlBuilder.IsIdRoot(id)
-                 ? new ServerItem(_libraryManager.GetUserRootFolder(), null)
+                 ? new ServerItem(_libraryRootFolderManager.GetUserRootFolder(), null)
                  : ParseItemId(id);
         }
 
@@ -1249,14 +1252,14 @@ namespace Emby.Dlna.ContentDirectory
 
             if (Guid.TryParse(id, out var itemId))
             {
-                var item = _libraryManager.GetItemById(itemId);
+                var item = _itemService.GetItemById(itemId);
 
                 return new ServerItem(item, stubType);
             }
 
             Logger.LogError("Error parsing item Id: {Id}. Returning user root folder.", id);
 
-            return new ServerItem(_libraryManager.GetUserRootFolder(), null);
+            return new ServerItem(_libraryRootFolderManager.GetUserRootFolder(), null);
         }
     }
 }

@@ -26,39 +26,35 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
     public class ChapterImagesTask : IScheduledTask
     {
         private readonly ILogger<ChapterImagesTask> _logger;
-        private readonly ILibraryManager _libraryManager;
-        private readonly IItemRepository _itemRepo;
         private readonly IApplicationPaths _appPaths;
         private readonly IEncodingManager _encodingManager;
         private readonly IFileSystem _fileSystem;
         private readonly ILocalizationManager _localization;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChapterImagesTask" /> class.
         /// </summary>
         /// <param name="logger">The logger.</param>.
-        /// <param name="libraryManager">The library manager.</param>.
-        /// <param name="itemRepo">The item repository.</param>
         /// <param name="appPaths">The application paths.</param>
         /// <param name="encodingManager">The encoding manager.</param>
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="localization">The localization manager.</param>
+        /// <param name="itemService">The item service.</param>
         public ChapterImagesTask(
             ILogger<ChapterImagesTask> logger,
-            ILibraryManager libraryManager,
-            IItemRepository itemRepo,
             IApplicationPaths appPaths,
             IEncodingManager encodingManager,
             IFileSystem fileSystem,
-            ILocalizationManager localization)
+            ILocalizationManager localization,
+            IItemService itemService)
         {
             _logger = logger;
-            _libraryManager = libraryManager;
-            _itemRepo = itemRepo;
             _appPaths = appPaths;
             _encodingManager = encodingManager;
             _fileSystem = fileSystem;
             _localization = localization;
+            _itemService = itemService;
         }
 
         /// <inheritdoc />
@@ -90,7 +86,7 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
         /// <inheritdoc />
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            var videos = _libraryManager.GetItemList(new InternalItemsQuery
+            var videos = _itemService.GetItemList(new InternalItemsQuery
             {
                 MediaTypes = new[] { MediaType.Video },
                 IsFolder = false,
@@ -141,7 +137,7 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
 
                 try
                 {
-                    var chapters = _itemRepo.GetChapters(video);
+                    var chapters = _itemService.GetChapters(video);
 
                     var success = await _encodingManager.RefreshChapterImages(video, directoryService, chapters, extract, true, cancellationToken).ConfigureAwait(false);
 

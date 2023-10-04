@@ -27,13 +27,15 @@ namespace MediaBrowser.Providers.Music
         /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
         public AlbumMetadataService(
             IServerConfigurationManager serverConfigurationManager,
             ILogger<AlbumMetadataService> logger,
             IProviderManager providerManager,
             IFileSystem fileSystem,
-            ILibraryManager libraryManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
         }
 

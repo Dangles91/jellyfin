@@ -77,7 +77,7 @@ namespace MediaBrowser.Controller.Entities.Audio
             var name = AlbumArtist;
             if (!string.IsNullOrEmpty(name))
             {
-                return LibraryManager.GetArtist(name, options);
+                return ItemService.GetArtist(name, options);
             }
 
             return null;
@@ -212,7 +212,7 @@ namespace MediaBrowser.Controller.Entities.Audio
                     continue;
                 }
 
-                var artist = LibraryManager.GetArtist(i);
+                var artist = ItemService.GetArtist(i);
 
                 if (!artist.IsAccessedByName)
                 {

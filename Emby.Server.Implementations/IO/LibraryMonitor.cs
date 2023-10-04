@@ -21,6 +21,9 @@ namespace Emby.Server.Implementations.IO
         private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IFileSystem _fileSystem;
+        private readonly IItemService _itemService;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
 
         /// <summary>
         /// The file system watchers.
@@ -46,16 +49,25 @@ namespace Emby.Server.Implementations.IO
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="configurationManager">The configuration manager.</param>
         /// <param name="fileSystem">The filesystem.</param>
+        /// <param name="itemService">The item service.</param>
+        /// <param name="libraryRootFolderManager">The root folder manager.</param>
+        /// <param name="libraryOptionsManager">The library options manager.</param>
         public LibraryMonitor(
             ILogger<LibraryMonitor> logger,
             ILibraryManager libraryManager,
             IServerConfigurationManager configurationManager,
-            IFileSystem fileSystem)
+            IFileSystem fileSystem,
+            IItemService itemService,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             _libraryManager = libraryManager;
             _logger = logger;
             _configurationManager = configurationManager;
             _fileSystem = fileSystem;
+            _itemService = itemService;
+            _libraryRootFolderManager = libraryRootFolderManager;
+            _libraryOptionsManager = libraryOptionsManager;
         }
 
         /// <summary>
@@ -105,7 +117,7 @@ namespace Emby.Server.Implementations.IO
                 return false;
             }
 
-            var options = _libraryManager.GetLibraryOptions(item);
+            var options = _libraryOptionsManager.GetLibraryOptions(item);
 
             if (options is not null)
             {
@@ -117,13 +129,13 @@ namespace Emby.Server.Implementations.IO
 
         public void Start()
         {
-            _libraryManager.ItemAdded += OnLibraryManagerItemAdded;
-            _libraryManager.ItemRemoved += OnLibraryManagerItemRemoved;
+            _itemService.ItemAdded += OnItemServiceItemAdded;
+            _itemService.ItemRemoved += OnItemServiceItemRemoved;
 
             var pathsToWatch = new List<string>();
 
-            var paths = _libraryManager
-                .RootFolder
+            var paths = _libraryRootFolderManager
+                .GetRootFolder()
                 .Children
                 .Where(IsLibraryMonitorEnabled)
                 .OfType<Folder>()
@@ -157,8 +169,8 @@ namespace Emby.Server.Implementations.IO
         /// Handles the ItemRemoved event of the LibraryManager control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
-        private void OnLibraryManagerItemRemoved(object? sender, ItemChangeEventArgs e)
+        /// <param name="e">The <see cref="ItemRemovedEventArgs"/> instance containing the event data.</param>
+        private void OnItemServiceItemRemoved(object? sender, ItemRemovedEventArgs e)
         {
             if (e.Parent is AggregateFolder)
             {
@@ -171,7 +183,7 @@ namespace Emby.Server.Implementations.IO
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
-        private void OnLibraryManagerItemAdded(object? sender, ItemChangeEventArgs e)
+        private void OnItemServiceItemAdded(object? sender, ItemChangeEventArgs e)
         {
             if (e.Parent is AggregateFolder)
             {
@@ -421,7 +433,7 @@ namespace Emby.Server.Implementations.IO
                     }
                 }
 
-                var newRefresher = new FileRefresher(path, _configurationManager, _libraryManager, _logger);
+                var newRefresher = new FileRefresher(path, _configurationManager, _logger, _itemService);
                 newRefresher.Completed += OnNewRefresherCompleted;
                 _activeRefreshers.Add(newRefresher);
             }
@@ -443,8 +455,8 @@ namespace Emby.Server.Implementations.IO
         /// </summary>
         public void Stop()
         {
-            _libraryManager.ItemAdded -= OnLibraryManagerItemAdded;
-            _libraryManager.ItemRemoved -= OnLibraryManagerItemRemoved;
+            _itemService.ItemAdded -= OnItemServiceItemAdded;
+            _itemService.ItemRemoved -= OnItemServiceItemRemoved;
 
             foreach (var watcher in _fileSystemWatchers.Values.ToList())
             {

@@ -34,6 +34,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly IMediaEncoder _mediaEncoder;
         private readonly IItemRepository _itemRepo;
         private readonly ILibraryManager _libraryManager;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
         private readonly IMediaSourceManager _mediaSourceManager;
 
         /// <summary>
@@ -44,17 +45,20 @@ namespace MediaBrowser.Providers.MediaInfo
         /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
         /// <param name="itemRepo">Instance of the <see cref="IItemRepository"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
         public AudioFileProber(
             ILogger<AudioFileProber> logger,
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
             IItemRepository itemRepo,
-            ILibraryManager libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             _logger = logger;
             _mediaEncoder = mediaEncoder;
             _itemRepo = itemRepo;
             _libraryManager = libraryManager;
+            _libraryOptionsManager = libraryOptionsManager;
             _mediaSourceManager = mediaSourceManager;
         }
 
@@ -103,7 +107,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 Fetch(item, result, cancellationToken);
             }
 
-            var libraryOptions = _libraryManager.GetLibraryOptions(item);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
 
             if (libraryOptions.EnableLUFSScan)
             {

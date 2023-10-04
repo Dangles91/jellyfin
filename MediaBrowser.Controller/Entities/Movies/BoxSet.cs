@@ -200,7 +200,7 @@ namespace MediaBrowser.Controller.Entities.Movies
             var expandedFolders = new List<Guid>();
 
             return FlattenItems(this, expandedFolders)
-                .SelectMany(i => LibraryManager.GetCollectionFolders(i))
+                .SelectMany(i => LibraryCollectionManager.GetCollectionFolders(i))
                 .Select(i => i.Id)
                 .Distinct()
                 .ToArray();

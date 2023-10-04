@@ -94,9 +94,5 @@ namespace MediaBrowser.Controller
         /// </param>
         /// <returns>The API URL.</returns>
         string GetLocalApiUrl(string hostname, string scheme = null, int? port = null);
-
-        string ExpandVirtualPath(string path);
-
-        string ReverseVirtualPath(string path);
     }
 }

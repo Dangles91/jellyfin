@@ -22,13 +22,20 @@ namespace Emby.Server.Implementations.TV
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _configurationManager;
+        private readonly IItemService _itemService;
 
-        public TVSeriesManager(IUserManager userManager, IUserDataManager userDataManager, ILibraryManager libraryManager, IServerConfigurationManager configurationManager)
+        public TVSeriesManager(
+            IUserManager userManager,
+            IUserDataManager userDataManager,
+            ILibraryManager libraryManager,
+            IServerConfigurationManager configurationManager,
+            IItemService itemService)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _configurationManager = configurationManager;
+            _itemService = itemService;
         }
 
         public QueryResult<BaseItem> GetNextUp(NextUpQuery query, DtoOptions options)
@@ -110,7 +117,7 @@ namespace Emby.Server.Implementations.TV
                 limit = limit.Value + 10;
             }
 
-            var items = _libraryManager
+            var items = _itemService
                 .GetItemList(
                     new InternalItemsQuery(user)
                     {
@@ -205,7 +212,7 @@ namespace Emby.Server.Implementations.TV
                 ? new[] { (ItemSortBy.DatePlayed, SortOrder.Descending), (ItemSortBy.ParentIndexNumber, SortOrder.Descending), (ItemSortBy.IndexNumber, SortOrder.Descending) }
                 : new[] { (ItemSortBy.ParentIndexNumber, SortOrder.Descending), (ItemSortBy.IndexNumber, SortOrder.Descending) };
 
-            var lastWatchedEpisode = _libraryManager.GetItemList(lastQuery).Cast<Episode>().FirstOrDefault();
+            var lastWatchedEpisode = _itemService.GetItemList(lastQuery).Cast<Episode>().FirstOrDefault();
 
             Episode? GetEpisode()
             {
@@ -230,11 +237,11 @@ namespace Emby.Server.Implementations.TV
                     nextQuery.MinParentAndIndexNumber = (lastWatchedParentIndexNumber.Value, lastWatchedIndexNumber.Value + 1);
                 }
 
-                var nextEpisode = _libraryManager.GetItemList(nextQuery).Cast<Episode>().FirstOrDefault();
+                var nextEpisode = _itemService.GetItemList(nextQuery).Cast<Episode>().FirstOrDefault();
 
                 if (_configurationManager.Configuration.DisplaySpecialsWithinSeasons)
                 {
-                    var consideredEpisodes = _libraryManager.GetItemList(new InternalItemsQuery(user)
+                    var consideredEpisodes = _itemService.GetItemList(new InternalItemsQuery(user)
                     {
                         AncestorWithPresentationUniqueKey = null,
                         SeriesPresentationUniqueKey = seriesKey,

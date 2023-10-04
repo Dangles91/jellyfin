@@ -34,6 +34,7 @@ public class ItemsController : BaseJellyfinApiController
     private readonly IDtoService _dtoService;
     private readonly ILogger<ItemsController> _logger;
     private readonly ISessionManager _sessionManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemsController"/> class.
@@ -44,13 +45,15 @@ public class ItemsController : BaseJellyfinApiController
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public ItemsController(
         IUserManager userManager,
         ILibraryManager libraryManager,
         ILocalizationManager localization,
         IDtoService dtoService,
         ILogger<ItemsController> logger,
-        ISessionManager sessionManager)
+        ISessionManager sessionManager,
+        IItemService itemService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
@@ -58,6 +61,7 @@ public class ItemsController : BaseJellyfinApiController
         _dtoService = dtoService;
         _logger = logger;
         _sessionManager = sessionManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -447,7 +451,7 @@ public class ItemsController : BaseJellyfinApiController
                 {
                     try
                     {
-                        return _libraryManager.GetArtist(i, new DtoOptions(false));
+                        return _itemService.GetArtist(i, new DtoOptions(false));
                     }
                     catch
                     {
@@ -472,7 +476,7 @@ public class ItemsController : BaseJellyfinApiController
             {
                 query.AlbumIds = albums.SelectMany(i =>
                 {
-                    return _libraryManager.GetItemIds(new InternalItemsQuery { IncludeItemTypes = new[] { BaseItemKind.MusicAlbum }, Name = i, Limit = 1 });
+                    return _itemService.GetItemIds(new InternalItemsQuery { IncludeItemTypes = new[] { BaseItemKind.MusicAlbum }, Name = i, Limit = 1 });
                 }).ToArray();
             }
 
@@ -483,7 +487,7 @@ public class ItemsController : BaseJellyfinApiController
                 {
                     try
                     {
-                        return _libraryManager.GetStudio(i);
+                        return _itemService.GetStudio(i);
                     }
                     catch
                     {
@@ -854,7 +858,7 @@ public class ItemsController : BaseJellyfinApiController
                 .ToArray();
         }
 
-        var itemsResult = _libraryManager.GetItemsResult(new InternalItemsQuery(user)
+        var itemsResult = _itemService.GetItemsResult(new InternalItemsQuery(user)
         {
             OrderBy = new[] { (ItemSortBy.DatePlayed, SortOrder.Descending) },
             IsResumable = true,

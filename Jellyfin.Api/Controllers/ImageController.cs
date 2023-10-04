@@ -46,6 +46,7 @@ public class ImageController : BaseJellyfinApiController
     private readonly ILogger<ImageController> _logger;
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IApplicationPaths _appPaths;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ImageController"/> class.
@@ -58,6 +59,7 @@ public class ImageController : BaseJellyfinApiController
     /// <param name="logger">Instance of the <see cref="ILogger{ImageController}"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="appPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public ImageController(
         IUserManager userManager,
         ILibraryManager libraryManager,
@@ -66,7 +68,8 @@ public class ImageController : BaseJellyfinApiController
         IFileSystem fileSystem,
         ILogger<ImageController> logger,
         IServerConfigurationManager serverConfigurationManager,
-        IApplicationPaths appPaths)
+        IApplicationPaths appPaths,
+        IItemService itemService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
@@ -76,6 +79,7 @@ public class ImageController : BaseJellyfinApiController
         _logger = logger;
         _serverConfigurationManager = serverConfigurationManager;
         _appPaths = appPaths;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -816,7 +820,7 @@ public class ImageController : BaseJellyfinApiController
         [FromQuery] string? foregroundLayer,
         [FromRoute, Required] int imageIndex)
     {
-        var item = _libraryManager.GetArtist(name);
+        var item = _itemService.GetArtist(name);
         if (item is null)
         {
             return NotFound();
@@ -1376,7 +1380,7 @@ public class ImageController : BaseJellyfinApiController
         [FromQuery] string? foregroundLayer,
         [FromQuery] int? imageIndex)
     {
-        var item = _libraryManager.GetStudio(name);
+        var item = _itemService.GetStudio(name);
         if (item is null)
         {
             return NotFound();
@@ -1456,7 +1460,7 @@ public class ImageController : BaseJellyfinApiController
         [FromQuery] string? backgroundColor,
         [FromQuery] string? foregroundLayer)
     {
-        var item = _libraryManager.GetStudio(name);
+        var item = _itemService.GetStudio(name);
         if (item is null)
         {
             return NotFound();

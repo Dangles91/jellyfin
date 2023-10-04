@@ -43,11 +43,12 @@ namespace Emby.Dlna.PlayTo
         private readonly IDeviceDiscovery _deviceDiscovery;
         private readonly string _serverAddress;
         private readonly string? _accessToken;
+        private readonly IItemService _itemService;
+        private readonly Device _device;
 
         private readonly List<PlaylistItem> _playlist = new List<PlaylistItem>();
-        private Device _device;
-        private int _currentPlaylistIndex;
 
+        private int _currentPlaylistIndex;
         private bool _disposed;
 
         public PlayToController(
@@ -65,7 +66,8 @@ namespace Emby.Dlna.PlayTo
             ILocalizationManager localization,
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
-            Device device)
+            Device device,
+            IItemService itemService)
         {
             _session = session;
             _sessionManager = sessionManager;
@@ -83,6 +85,7 @@ namespace Emby.Dlna.PlayTo
             _mediaEncoder = mediaEncoder;
 
             _device = device;
+            _itemService = itemService;
             _device.OnDeviceUnavailable = OnDeviceUnavailable;
             _device.PlaybackStart += OnDevicePlaybackStart;
             _device.PlaybackProgress += OnDevicePlaybackProgress;
@@ -513,7 +516,7 @@ namespace Emby.Dlna.PlayTo
                 _mediaSourceManager,
                 _logger,
                 _mediaEncoder,
-                _libraryManager)
+                _itemService)
                 .GetItemDidl(item, user, null, _session.DeviceId, new Filter(), playlistItem.StreamInfo);
 
             playlistItem.Didl = itemXml;

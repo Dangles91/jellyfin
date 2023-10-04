@@ -51,6 +51,7 @@ namespace Emby.Dlna.Main
         private readonly IDeviceDiscovery _deviceDiscovery;
         private readonly ISocketFactory _socketFactory;
         private readonly INetworkManager _networkManager;
+        private readonly IItemService _itemService;
         private readonly object _syncLock = new object();
         private readonly bool _disabled;
 
@@ -78,7 +79,9 @@ namespace Emby.Dlna.Main
             ISocketFactory socketFactory,
             INetworkManager networkManager,
             IUserViewManager userViewManager,
-            ITVSeriesManager tvSeriesManager)
+            ITVSeriesManager tvSeriesManager,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemService itemService)
         {
             _config = config;
             _appHost = appHost;
@@ -95,6 +98,7 @@ namespace Emby.Dlna.Main
             _mediaEncoder = mediaEncoder;
             _socketFactory = socketFactory;
             _networkManager = networkManager;
+            _itemService = itemService;
             _logger = loggerFactory.CreateLogger<DlnaEntryPoint>();
 
             ContentDirectory = new ContentDirectory.ContentDirectoryService(
@@ -110,7 +114,9 @@ namespace Emby.Dlna.Main
                 mediaSourceManager,
                 userViewManager,
                 mediaEncoder,
-                tvSeriesManager);
+                tvSeriesManager,
+                libraryRootFolderManager,
+                itemService);
 
             ConnectionManager = new ConnectionManager.ConnectionManagerService(
                 dlnaManager,
@@ -391,7 +397,8 @@ namespace Emby.Dlna.Main
                         _userDataManager,
                         _localization,
                         _mediaSourceManager,
-                        _mediaEncoder);
+                        _mediaEncoder,
+                        _itemService);
 
                     _manager.Start();
                 }

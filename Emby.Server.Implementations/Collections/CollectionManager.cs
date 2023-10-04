@@ -29,6 +29,7 @@ namespace Emby.Server.Implementations.Collections
         private readonly ILibraryMonitor _iLibraryMonitor;
         private readonly ILogger<CollectionManager> _logger;
         private readonly IProviderManager _providerManager;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly ILocalizationManager _localizationManager;
         private readonly IApplicationPaths _appPaths;
 
@@ -42,6 +43,7 @@ namespace Emby.Server.Implementations.Collections
         /// <param name="iLibraryMonitor">The library monitor.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="providerManager">The provider manager.</param>
+        /// <param name="libraryRootFolderManager">The root folder manager.</param>
         public CollectionManager(
             ILibraryManager libraryManager,
             IApplicationPaths appPaths,
@@ -49,13 +51,15 @@ namespace Emby.Server.Implementations.Collections
             IFileSystem fileSystem,
             ILibraryMonitor iLibraryMonitor,
             ILoggerFactory loggerFactory,
-            IProviderManager providerManager)
+            IProviderManager providerManager,
+            ILibraryRootFolderManager libraryRootFolderManager)
         {
             _libraryManager = libraryManager;
             _fileSystem = fileSystem;
             _iLibraryMonitor = iLibraryMonitor;
             _logger = loggerFactory.CreateLogger<CollectionManager>();
             _providerManager = providerManager;
+            _libraryRootFolderManager = libraryRootFolderManager;
             _localizationManager = localizationManager;
             _appPaths = appPaths;
         }
@@ -71,8 +75,8 @@ namespace Emby.Server.Implementations.Collections
 
         private IEnumerable<Folder> FindFolders(string path)
         {
-            return _libraryManager
-                .RootFolder
+            return _libraryRootFolderManager
+                .GetRootFolder()
                 .Children
                 .OfType<Folder>()
                 .Where(i => _fileSystem.AreEqual(path, i.Path) || _fileSystem.ContainsSubPath(i.Path, path));

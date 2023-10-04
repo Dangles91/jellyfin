@@ -13,11 +13,16 @@ namespace Emby.Server.Implementations.Data
     {
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger<CleanDatabaseScheduledTask> _logger;
+        private readonly IItemService _itemService;
 
-        public CleanDatabaseScheduledTask(ILibraryManager libraryManager, ILogger<CleanDatabaseScheduledTask> logger)
+        public CleanDatabaseScheduledTask(
+            ILibraryManager libraryManager,
+            ILogger<CleanDatabaseScheduledTask> logger,
+            IItemService itemService)
         {
             _libraryManager = libraryManager;
             _logger = logger;
+            _itemService = itemService;
         }
 
         public Task Run(IProgress<double> progress, CancellationToken cancellationToken)
@@ -28,7 +33,7 @@ namespace Emby.Server.Implementations.Data
 
         private void CleanDeadItems(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            var itemIds = _libraryManager.GetItemIds(new InternalItemsQuery
+            var itemIds = _itemService.GetItemIds(new InternalItemsQuery
             {
                 HasDeadParentId = true
             });
@@ -48,7 +53,7 @@ namespace Emby.Server.Implementations.Data
                 {
                     _logger.LogInformation("Cleaning item {0} type: {1} path: {2}", item.Name, item.GetType().Name, item.Path ?? string.Empty);
 
-                    _libraryManager.DeleteItem(item, new DeleteOptions
+                    _itemService.DeleteItem(item, new DeleteOptions
                     {
                         DeleteFileLocation = false
                     });

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +21,7 @@ public class KeyframeExtractionScheduledTask : IScheduledTask
     private const int Pagesize = 1000;
 
     private readonly ILocalizationManager _localizationManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IKeyframeExtractor[] _keyframeExtractors;
     private static readonly BaseItemKind[] _itemTypes = { BaseItemKind.Episode, BaseItemKind.Movie };
 
@@ -29,12 +29,15 @@ public class KeyframeExtractionScheduledTask : IScheduledTask
     /// Initializes a new instance of the <see cref="KeyframeExtractionScheduledTask"/> class.
     /// </summary>
     /// <param name="localizationManager">An instance of the <see cref="ILocalizationManager"/> interface.</param>
-    /// <param name="libraryManager">An instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="keyframeExtractors">The keyframe extractors.</param>
-    public KeyframeExtractionScheduledTask(ILocalizationManager localizationManager, ILibraryManager libraryManager, IEnumerable<IKeyframeExtractor> keyframeExtractors)
+    /// <param name="itemService">The item service.</param>
+    public KeyframeExtractionScheduledTask(
+        ILocalizationManager localizationManager,
+        IEnumerable<IKeyframeExtractor> keyframeExtractors,
+        IItemService itemService)
     {
         _localizationManager = localizationManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _keyframeExtractors = keyframeExtractors.OrderByDescending(e => e.IsMetadataBased).ToArray();
     }
 
@@ -64,7 +67,7 @@ public class KeyframeExtractionScheduledTask : IScheduledTask
             Limit = Pagesize
         };
 
-        var numberOfVideos = _libraryManager.GetCount(query);
+        var numberOfVideos = _itemService.GetCount(query);
 
         var startIndex = 0;
         var numComplete = 0;
@@ -73,7 +76,7 @@ public class KeyframeExtractionScheduledTask : IScheduledTask
         {
             query.StartIndex = startIndex;
 
-            var videos = _libraryManager.GetItemList(query);
+            var videos = _itemService.GetItemList(query);
             var currentPageCount = videos.Count;
             // TODO parallelize with Parallel.ForEach?
             for (var i = 0; i < currentPageCount; i++)

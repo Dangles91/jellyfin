@@ -39,7 +39,7 @@ namespace MediaBrowser.Controller.Channels
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns>Channel.</returns>
-        Channel GetChannel(string id);
+        Channel GetChannel(Guid id);
 
         /// <summary>
         /// Gets the channels internal.

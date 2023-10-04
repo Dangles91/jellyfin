@@ -26,6 +26,7 @@ public class StudiosController : BaseJellyfinApiController
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IDtoService _dtoService;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StudiosController"/> class.
@@ -33,14 +34,17 @@ public class StudiosController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public StudiosController(
         ILibraryManager libraryManager,
         IUserManager userManager,
-        IDtoService dtoService)
+        IDtoService dtoService,
+        IItemService itemService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _dtoService = dtoService;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -124,7 +128,7 @@ public class StudiosController : BaseJellyfinApiController
             }
         }
 
-        var result = _libraryManager.GetStudios(query);
+        var result = _itemService.GetStudios(query);
         var shouldIncludeItemTypes = includeItemTypes.Length != 0;
         return RequestHelpers.CreateQueryResult(result, dtoOptions, _dtoService, shouldIncludeItemTypes, user);
     }
@@ -143,7 +147,7 @@ public class StudiosController : BaseJellyfinApiController
         userId = RequestHelpers.GetUserId(User, userId);
         var dtoOptions = new DtoOptions().AddClientFields(User);
 
-        var item = _libraryManager.GetStudio(name);
+        var item = _itemService.GetStudio(name);
         if (!userId.Equals(default))
         {
             var user = _userManager.GetUserById(userId.Value);

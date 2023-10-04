@@ -21,19 +21,32 @@ namespace MediaBrowser.Controller.Library
         /// The _app paths.
         /// </summary>
         private readonly IServerApplicationPaths _appPaths;
-
-        private readonly ILibraryManager _libraryManager;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IItemPathResolver _itemPathResolver;
+        private readonly IItemContentTypeProvider _itemContentTypeProvider;
+        private readonly IFileSystem _fileSystem;
         private LibraryOptions _libraryOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemResolveArgs" /> class.
         /// </summary>
         /// <param name="appPaths">The app paths.</param>
-        /// <param name="libraryManager">The library manager.</param>
-        public ItemResolveArgs(IServerApplicationPaths appPaths, ILibraryManager libraryManager)
+        /// <param name="libraryOptionsManager">The library options.</param>
+        /// <param name="itemPathResolver">The path resolver.</param>
+        /// <param name="itemContentTypeProvider">The item content type provider.</param>
+        /// <param name="fileSystem">The instance of <see cref="IFileSystem"/> interface.</param>
+        public ItemResolveArgs(
+            IServerApplicationPaths appPaths,
+            ILibraryOptionsManager libraryOptionsManager,
+            IItemPathResolver itemPathResolver,
+            IItemContentTypeProvider itemContentTypeProvider,
+            IFileSystem fileSystem)
         {
             _appPaths = appPaths;
-            _libraryManager = libraryManager;
+            _libraryOptionsManager = libraryOptionsManager;
+            _itemPathResolver = itemPathResolver;
+            _itemContentTypeProvider = itemContentTypeProvider;
+            _fileSystem = fileSystem;
         }
 
         /// <summary>
@@ -44,7 +57,7 @@ namespace MediaBrowser.Controller.Library
 
         public LibraryOptions LibraryOptions
         {
-            get => _libraryOptions ??= Parent is null ? new LibraryOptions() : _libraryManager.GetLibraryOptions(Parent);
+            get => _libraryOptions ??= Parent is null ? new LibraryOptions() : _libraryOptionsManager.GetLibraryOptions(Parent);
             set => _libraryOptions = value;
         }
 
@@ -99,7 +112,7 @@ namespace MediaBrowser.Controller.Library
         /// Gets a value indicating whether this instance is physical root.
         /// </summary>
         /// <value><c>true</c> if this instance is physical root; otherwise, <c>false</c>.</value>
-        public bool IsPhysicalRoot => IsDirectory && BaseItem.FileSystem.AreEqual(Path, _appPaths.RootFolderPath);
+        public bool IsPhysicalRoot => IsDirectory && _fileSystem.AreEqual(Path, _appPaths.RootFolderPath);
 
         /// <summary>
         /// Gets or sets the additional locations.
@@ -231,7 +244,7 @@ namespace MediaBrowser.Controller.Library
         /// <returns>The configured content type.</returns>
         public string GetConfiguredContentType()
         {
-            return _libraryManager.GetConfiguredContentType(Path);
+            return _itemContentTypeProvider.GetConfiguredContentType(Path);
         }
 
         /// <summary>
@@ -244,7 +257,7 @@ namespace MediaBrowser.Controller.Library
             for (var i = 0; i < numberOfChildren; i++)
             {
                 var child = FileSystemChildren[i];
-                if (_libraryManager.IgnoreFile(child, Parent))
+                if (_itemPathResolver.IgnoreFile(child, Parent))
                 {
                     continue;
                 }
@@ -276,7 +289,7 @@ namespace MediaBrowser.Controller.Library
                     return true;
                 }
 
-                return args.Path is not null && BaseItem.FileSystem.AreEqual(args.Path, Path);
+                return args.Path is not null && _fileSystem.AreEqual(args.Path, Path);
             }
 
             return false;

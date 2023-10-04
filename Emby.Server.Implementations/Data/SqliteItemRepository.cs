@@ -31,6 +31,7 @@ using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
+using MediaBrowser.Model.IO;
 using MediaBrowser.Model.LiveTv;
 using MediaBrowser.Model.Querying;
 using Microsoft.Data.Sqlite;
@@ -57,7 +58,7 @@ namespace Emby.Server.Implementations.Data
         private readonly ILocalizationManager _localization;
         // TODO: Remove this dependency. GetImageCacheTag() is the only method used and it can be converted to a static helper method
         private readonly IImageProcessor _imageProcessor;
-
+        private readonly IFileSystem _fileSystem;
         private readonly TypeMapper _typeMapper;
         private readonly JsonSerializerOptions _jsonOptions;
 
@@ -320,6 +321,7 @@ namespace Emby.Server.Implementations.Data
         /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
         /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
         /// <param name="configuration">Instance of the <see cref="IConfiguration"/> interface.</param>
+        /// <param name="fileSystem"></param>
         /// <exception cref="ArgumentNullException">config is null.</exception>
         public SqliteItemRepository(
             IServerConfigurationManager config,
@@ -327,14 +329,15 @@ namespace Emby.Server.Implementations.Data
             ILogger<SqliteItemRepository> logger,
             ILocalizationManager localization,
             IImageProcessor imageProcessor,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IFileSystem fileSystem)
             : base(logger)
         {
             _config = config;
             _appHost = appHost;
             _localization = localization;
             _imageProcessor = imageProcessor;
-
+            _fileSystem = fileSystem;
             _typeMapper = new TypeMapper();
             _jsonOptions = JsonDefaults.Options;
 
@@ -655,12 +658,12 @@ namespace Emby.Server.Implementations.Data
                 return null;
             }
 
-            return _appHost.ReverseVirtualPath(path);
+            return _fileSystem.ReverseVirtualPath(path);
         }
 
         private string RestorePath(string path)
         {
-            return _appHost.ExpandVirtualPath(path);
+            return _fileSystem.ExpandVirtualPath(path);
         }
 
         private void SaveItem(BaseItem item, BaseItem topParent, string userDataKey, SqliteCommand saveItemStatement)

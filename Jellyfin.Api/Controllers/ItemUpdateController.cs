@@ -34,6 +34,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     private readonly ILocalizationManager _localizationManager;
     private readonly IFileSystem _fileSystem;
     private readonly IServerConfigurationManager _serverConfigurationManager;
+    private readonly IItemContentTypeProvider _itemContentTypeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemUpdateController"/> class.
@@ -43,18 +44,21 @@ public class ItemUpdateController : BaseJellyfinApiController
     /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
     /// <param name="localizationManager">Instance of the <see cref="ILocalizationManager"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
+    /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
     public ItemUpdateController(
         IFileSystem fileSystem,
         ILibraryManager libraryManager,
         IProviderManager providerManager,
         ILocalizationManager localizationManager,
-        IServerConfigurationManager serverConfigurationManager)
+        IServerConfigurationManager serverConfigurationManager,
+        IItemContentTypeProvider itemContentTypeProvider)
     {
         _libraryManager = libraryManager;
         _providerManager = providerManager;
         _localizationManager = localizationManager;
         _fileSystem = fileSystem;
         _serverConfigurationManager = serverConfigurationManager;
+        _itemContentTypeProvider = itemContentTypeProvider;
     }
 
     /// <summary>
@@ -161,8 +165,8 @@ public class ItemUpdateController : BaseJellyfinApiController
             && item is not IItemByName
             && item.SourceType == SourceType.Library)
         {
-            var inheritedContentType = _libraryManager.GetInheritedContentType(item);
-            var configuredContentType = _libraryManager.GetConfiguredContentType(item);
+            var inheritedContentType = _itemContentTypeProvider.GetInheritedContentType(item);
+            var configuredContentType = _itemContentTypeProvider.GetConfiguredContentType(item);
 
             if (string.IsNullOrWhiteSpace(inheritedContentType) ||
                 !string.IsNullOrWhiteSpace(configuredContentType))

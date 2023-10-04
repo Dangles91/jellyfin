@@ -142,16 +142,19 @@ namespace Emby.Server.Implementations
         /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/> interface.</param>
         /// <param name="options">Instance of the <see cref="IStartupOptions"/> interface.</param>
         /// <param name="startupConfig">The <see cref="IConfiguration" /> interface.</param>
+        /// <param name="serverApplicationPaths">The server paths.</param>
         protected ApplicationHost(
             IServerApplicationPaths applicationPaths,
             ILoggerFactory loggerFactory,
             IStartupOptions options,
-            IConfiguration startupConfig)
+            IConfiguration startupConfig,
+            IServerApplicationPaths serverApplicationPaths)
         {
             ApplicationPaths = applicationPaths;
             LoggerFactory = loggerFactory;
             _startupOptions = options;
             _startupConfig = startupConfig;
+            _fileSystemManager = new ManagedFileSystem(LoggerFactory.CreateLogger<ManagedFileSystem>(), applicationPaths, serverApplicationPaths);
 
             Logger = LoggerFactory.CreateLogger<ApplicationHost>();
             _deviceId = new DeviceId(ApplicationPaths, LoggerFactory);
@@ -282,22 +285,6 @@ namespace Emby.Server.Implementations
             string.IsNullOrEmpty(ConfigurationManager.Configuration.ServerName)
                 ? Environment.MachineName
                 : ConfigurationManager.Configuration.ServerName;
-
-        public string ExpandVirtualPath(string path)
-        {
-            var appPaths = ApplicationPaths;
-
-            return path.Replace(appPaths.VirtualDataPath, appPaths.DataPath, StringComparison.OrdinalIgnoreCase)
-                .Replace(appPaths.VirtualInternalMetadataPath, appPaths.InternalMetadataPath, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public string ReverseVirtualPath(string path)
-        {
-            var appPaths = ApplicationPaths;
-
-            return path.Replace(appPaths.DataPath, appPaths.VirtualDataPath, StringComparison.OrdinalIgnoreCase)
-                .Replace(appPaths.InternalMetadataPath, appPaths.VirtualInternalMetadataPath, StringComparison.OrdinalIgnoreCase);
-        }
 
         /// <summary>
         /// Creates the instance safe.
@@ -503,6 +490,7 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IApplicationHost>(this);
             serviceCollection.AddSingleton(_pluginManager);
             serviceCollection.AddSingleton<IApplicationPaths>(ApplicationPaths);
+            serviceCollection.AddSingleton<IServerApplicationPaths>(ApplicationPaths);
 
             serviceCollection.AddSingleton<IFileSystem, ManagedFileSystem>();
             serviceCollection.AddSingleton<IShortcutHandler, MbLinkShortcutHandler>();
@@ -674,22 +662,28 @@ namespace Emby.Server.Implementations
         private void SetStaticProperties()
         {
             // For now there's no real way to inject these properly
-            BaseItem.Logger = Resolve<ILogger<BaseItem>>();
-            BaseItem.ConfigurationManager = ConfigurationManager;
-            BaseItem.LibraryManager = Resolve<ILibraryManager>();
-            BaseItem.ProviderManager = Resolve<IProviderManager>();
-            BaseItem.LocalizationManager = Resolve<ILocalizationManager>();
-            BaseItem.ItemRepository = Resolve<IItemRepository>();
-            BaseItem.FileSystem = Resolve<IFileSystem>();
-            BaseItem.UserDataManager = Resolve<IUserDataManager>();
-            BaseItem.ChannelManager = Resolve<IChannelManager>();
+            BaseItem.ConfigureDependencies(
+                Resolve<ILogger<BaseItem>>(),
+                Resolve<ILibraryManager>(),
+                ConfigurationManager,
+                Resolve<IProviderManager>(),
+                Resolve<ILocalizationManager>(),
+                _fileSystemManager,
+                Resolve<IUserDataManager>(),
+                Resolve<IChannelManager>(),
+                Resolve<IMediaSourceManager>(),
+                Resolve<IItemService>(),
+                Resolve<ILibraryRootFolderManager>(),
+                Resolve<IItemPathResolver>(),
+                Resolve<ILibraryOptionsManager>(),
+                Resolve<ILibraryCollectionManager>(),
+                Resolve<IItemContentTypeProvider>(),
+                Resolve<IUserViewBuilder>());
+
             Video.LiveTvManager = Resolve<ILiveTvManager>();
             Folder.UserViewManager = Resolve<IUserViewManager>();
             UserView.TVSeriesManager = Resolve<ITVSeriesManager>();
             UserView.CollectionManager = Resolve<ICollectionManager>();
-            BaseItem.MediaSourceManager = Resolve<IMediaSourceManager>();
-            CollectionFolder.XmlSerializer = _xmlSerializer;
-            CollectionFolder.ApplicationHost = this;
         }
 
         /// <summary>
@@ -707,7 +701,6 @@ namespace Emby.Server.Implementations
 
             Resolve<ILibraryManager>().AddParts(
                 GetExports<IResolverIgnoreRule>(),
-                GetExports<IItemResolver>(),
                 GetExports<IIntroProvider>(),
                 GetExports<IBaseItemComparer>(),
                 GetExports<ILibraryPostScanTask>());
@@ -718,6 +711,10 @@ namespace Emby.Server.Implementations
                 GetExports<IMetadataProvider>(),
                 GetExports<IMetadataSaver>(),
                 GetExports<IExternalId>());
+
+            Resolve<IItemPathResolver>().AddParts(
+                GetExports<IItemResolver>(),
+                GetExports<IResolverIgnoreRule>());
 
             Resolve<ILiveTvManager>().AddParts(GetExports<ILiveTvService>(), GetExports<ITunerHost>(), GetExports<IListingsProvider>());
 

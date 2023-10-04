@@ -30,6 +30,7 @@ namespace Emby.Server.Implementations.MediaEncoder
         private readonly IMediaEncoder _encoder;
         private readonly IChapterManager _chapterManager;
         private readonly ILibraryManager _libraryManager;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
 
         /// <summary>
         /// The first chapter ticks.
@@ -41,13 +42,15 @@ namespace Emby.Server.Implementations.MediaEncoder
             IFileSystem fileSystem,
             IMediaEncoder encoder,
             IChapterManager chapterManager,
-            ILibraryManager libraryManager)
+            ILibraryManager libraryManager,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             _logger = logger;
             _fileSystem = fileSystem;
             _encoder = encoder;
             _chapterManager = chapterManager;
             _libraryManager = libraryManager;
+            _libraryOptionsManager = libraryOptionsManager;
         }
 
         /// <summary>
@@ -93,7 +96,7 @@ namespace Emby.Server.Implementations.MediaEncoder
 
         public async Task<bool> RefreshChapterImages(Video video, IDirectoryService directoryService, IReadOnlyList<ChapterInfo> chapters, bool extractImages, bool saveChapters, CancellationToken cancellationToken)
         {
-            var libraryOptions = _libraryManager.GetLibraryOptions(video);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
 
             if (!IsEligibleForChapterImageExtraction(video, libraryOptions))
             {

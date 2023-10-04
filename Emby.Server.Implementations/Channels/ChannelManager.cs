@@ -50,6 +50,8 @@ namespace Emby.Server.Implementations.Channels
         private readonly IFileSystem _fileSystem;
         private readonly IProviderManager _providerManager;
         private readonly IMemoryCache _memoryCache;
+        private readonly IItemService _itemService;
+        private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly SemaphoreSlim _resourcePool = new SemaphoreSlim(1, 1);
         private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
         private bool _disposed = false;
@@ -67,6 +69,8 @@ namespace Emby.Server.Implementations.Channels
         /// <param name="providerManager">The provider manager.</param>
         /// <param name="memoryCache">The memory cache.</param>
         /// <param name="channels">The channels.</param>
+        /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
+        /// <param name="libraryItemIdGenerator">The instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
         public ChannelManager(
             IUserManager userManager,
             IDtoService dtoService,
@@ -77,7 +81,9 @@ namespace Emby.Server.Implementations.Channels
             IUserDataManager userDataManager,
             IProviderManager providerManager,
             IMemoryCache memoryCache,
-            IEnumerable<IChannel> channels)
+            IEnumerable<IChannel> channels,
+            IItemService itemService,
+            ILibraryItemIdGenerator libraryItemIdGenerator)
         {
             _userManager = userManager;
             _dtoService = dtoService;
@@ -88,17 +94,29 @@ namespace Emby.Server.Implementations.Channels
             _userDataManager = userDataManager;
             _providerManager = providerManager;
             _memoryCache = memoryCache;
+            _itemService = itemService;
+            _libraryItemIdGenerator = libraryItemIdGenerator;
             Channels = channels.ToArray();
+
+            itemService.ItemRemoved += ItemService_ItemRemoved;
         }
 
         internal IChannel[] Channels { get; }
 
         private static TimeSpan CacheLength => TimeSpan.FromHours(3);
 
+        private void ItemService_ItemRemoved(object sender, ItemRemovedEventArgs e)
+        {
+            if (e.Item?.SourceType == SourceType.Channel && e.DeleteOptions?.DeleteFromExternalProvider == true)
+            {
+                DeleteItem(e.Item);
+            }
+        }
+
         /// <inheritdoc />
         public bool EnableMediaSourceDisplay(BaseItem item)
         {
-            var internalChannel = _libraryManager.GetItemById(item.ChannelId);
+            var internalChannel = _itemService.GetItemById(item.ChannelId);
             var channel = Channels.FirstOrDefault(i => GetInternalChannelId(i.Name).Equals(internalChannel.Id));
 
             return channel is not IDisableMediaSourceDisplay;
@@ -107,7 +125,7 @@ namespace Emby.Server.Implementations.Channels
         /// <inheritdoc />
         public bool CanDelete(BaseItem item)
         {
-            var internalChannel = _libraryManager.GetItemById(item.ChannelId);
+            var internalChannel = _itemService.GetItemById(item.ChannelId);
             var channel = Channels.FirstOrDefault(i => GetInternalChannelId(i.Name).Equals(internalChannel.Id));
 
             return channel is ISupportsDelete supportsDelete && supportsDelete.CanDelete(item);
@@ -116,7 +134,7 @@ namespace Emby.Server.Implementations.Channels
         /// <inheritdoc />
         public bool EnableMediaProbe(BaseItem item)
         {
-            var internalChannel = _libraryManager.GetItemById(item.ChannelId);
+            var internalChannel = _itemService.GetItemById(item.ChannelId);
             var channel = Channels.FirstOrDefault(i => GetInternalChannelId(i.Name).Equals(internalChannel.Id));
 
             return channel is ISupportsMediaProbe;
@@ -125,7 +143,7 @@ namespace Emby.Server.Implementations.Channels
         /// <inheritdoc />
         public Task DeleteItem(BaseItem item)
         {
-            var internalChannel = _libraryManager.GetItemById(item.ChannelId);
+            var internalChannel = _itemService.GetItemById(item.ChannelId);
             if (internalChannel is null)
             {
                 throw new ArgumentException(nameof(item.ChannelId));
@@ -446,7 +464,7 @@ namespace Emby.Server.Implementations.Channels
             var isNew = false;
             var forceUpdate = false;
 
-            var item = _libraryManager.GetItemById(id) as Channel;
+            var item = _itemService.GetItemById(id) as Channel;
 
             if (item is null)
             {
@@ -493,7 +511,7 @@ namespace Emby.Server.Implementations.Channels
             if (isNew)
             {
                 item.OnMetadataChanged();
-                _libraryManager.CreateItem(item, null);
+                _itemService.CreateItem(item, null);
             }
 
             await item.RefreshMetadata(
@@ -525,19 +543,13 @@ namespace Emby.Server.Implementations.Channels
         /// <returns>The corresponding channel.</returns>
         public Channel GetChannel(Guid id)
         {
-            return _libraryManager.GetItemById(id) as Channel;
-        }
-
-        /// <inheritdoc />
-        public Channel GetChannel(string id)
-        {
-            return _libraryManager.GetItemById(id) as Channel;
+            return _itemService.GetItemById(id) as Channel;
         }
 
         /// <inheritdoc />
         public ChannelFeatures[] GetAllChannelFeatures()
         {
-            return _libraryManager.GetItemIds(
+            return _itemService.GetItemIds(
                 new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.Channel },
@@ -604,7 +616,7 @@ namespace Emby.Server.Implementations.Channels
         {
             ArgumentException.ThrowIfNullOrEmpty(name);
 
-            return _libraryManager.GetNewItemId("Channel " + name, typeof(Channel));
+            return _libraryItemIdGenerator.Generate("Channel " + name, typeof(Channel));
         }
 
         /// <inheritdoc />
@@ -671,7 +683,7 @@ namespace Emby.Server.Implementations.Channels
                 };
             }
 
-            return _libraryManager.GetItemsResult(query);
+            return _itemService.GetItemsResult(query);
         }
 
         private async Task RefreshLatestChannelItems(IChannel channel, CancellationToken cancellationToken)
@@ -715,7 +727,7 @@ namespace Emby.Server.Implementations.Channels
 
             var parentItem = query.ParentId.Equals(default)
                 ? channel
-                : _libraryManager.GetItemById(query.ParentId);
+                : _itemService.GetItemById(query.ParentId);
 
             var itemsResult = await GetChannelItems(
                 channelProvider,
@@ -752,29 +764,28 @@ namespace Emby.Server.Implementations.Channels
                         cancellationToken).ConfigureAwait(false)).Id;
                 }
 
-                var existingIds = _libraryManager.GetItemIds(query);
+                var existingIds = _itemService.GetItemIds(query);
                 var deadIds = existingIds.Except(internalItems)
                     .ToArray();
 
                 foreach (var deadId in deadIds)
                 {
-                    var deadItem = _libraryManager.GetItemById(deadId);
+                    var deadItem = _itemService.GetItemById(deadId);
                     if (deadItem is not null)
                     {
-                        _libraryManager.DeleteItem(
+                        _itemService.DeleteItem(
                             deadItem,
+                            parentItem,
                             new DeleteOptions
                             {
                                 DeleteFileLocation = false,
                                 DeleteFromExternalProvider = false
-                            },
-                            parentItem,
-                            false);
+                            });
                     }
                 }
             }
 
-            return _libraryManager.GetItemsResult(query);
+            return _itemService.GetItemsResult(query);
         }
 
         /// <inheritdoc />
@@ -940,13 +951,13 @@ namespace Emby.Server.Implementations.Channels
         private T GetItemById<T>(string idString, string channelName, out bool isNew)
             where T : BaseItem, new()
         {
-            var id = _libraryManager.GetNewItemId(GetIdToHash(idString, channelName), typeof(T));
+            var id = _libraryItemIdGenerator.Generate(GetIdToHash(idString, channelName), typeof(T));
 
             T item = null;
 
             try
             {
-                item = _libraryManager.GetItemById(id) as T;
+                item = _itemService.GetItemById(id) as T;
             }
             catch (Exception ex)
             {
@@ -1152,7 +1163,7 @@ namespace Emby.Server.Implementations.Channels
 
             if (isNew)
             {
-                _libraryManager.CreateItem(item, parentFolder);
+                _itemService.CreateItem(item, parentFolder);
 
                 if (info.People is not null && info.People.Count > 0)
                 {

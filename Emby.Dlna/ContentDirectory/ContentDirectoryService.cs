@@ -35,6 +35,8 @@ namespace Emby.Dlna.ContentDirectory
         private readonly IUserViewManager _userViewManager;
         private readonly IMediaEncoder _mediaEncoder;
         private readonly ITVSeriesManager _tvSeriesManager;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContentDirectoryService"/> class.
@@ -52,6 +54,8 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="userViewManager">The <see cref="IUserViewManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
+        /// <param name="libraryRootFolderManager">The <see cref="ILibraryRootFolderManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
+        /// <param name="itemService">The <see cref="IItemService"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         public ContentDirectoryService(
             IDlnaManager dlna,
             IUserDataManager userDataManager,
@@ -65,7 +69,9 @@ namespace Emby.Dlna.ContentDirectory
             IMediaSourceManager mediaSourceManager,
             IUserViewManager userViewManager,
             IMediaEncoder mediaEncoder,
-            ITVSeriesManager tvSeriesManager)
+            ITVSeriesManager tvSeriesManager,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemService itemService)
             : base(logger, httpClient)
         {
             _dlna = dlna;
@@ -79,6 +85,8 @@ namespace Emby.Dlna.ContentDirectory
             _userViewManager = userViewManager;
             _mediaEncoder = mediaEncoder;
             _tvSeriesManager = tvSeriesManager;
+            _libraryRootFolderManager = libraryRootFolderManager;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -113,7 +121,6 @@ namespace Emby.Dlna.ContentDirectory
 
             return new ControlHandler(
                 Logger,
-                _libraryManager,
                 profile,
                 serverAddress,
                 null,
@@ -126,7 +133,9 @@ namespace Emby.Dlna.ContentDirectory
                 _mediaSourceManager,
                 _userViewManager,
                 _mediaEncoder,
-                _tvSeriesManager)
+                _tvSeriesManager,
+                _itemService,
+                _libraryRootFolderManager)
                 .ProcessControlRequestAsync(request);
         }
 

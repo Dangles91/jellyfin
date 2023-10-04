@@ -30,6 +30,8 @@ namespace Emby.Server.Implementations.EntryPoints
         private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IProviderManager _providerManager;
+        private readonly IItemService _itemService;
+        private readonly ILibraryCollectionManager _libraryCollectionManager;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
         private readonly ILogger<LibraryChangedNotifier> _logger;
@@ -52,7 +54,9 @@ namespace Emby.Server.Implementations.EntryPoints
             ISessionManager sessionManager,
             IUserManager userManager,
             ILogger<LibraryChangedNotifier> logger,
-            IProviderManager providerManager)
+            IProviderManager providerManager,
+            IItemService itemService,
+            ILibraryCollectionManager libraryCollectionManager)
         {
             _libraryManager = libraryManager;
             _configurationManager = configurationManager;
@@ -60,6 +64,8 @@ namespace Emby.Server.Implementations.EntryPoints
             _userManager = userManager;
             _logger = logger;
             _providerManager = providerManager;
+            _itemService = itemService;
+            _libraryCollectionManager = libraryCollectionManager;
         }
 
         /// <summary>
@@ -70,9 +76,9 @@ namespace Emby.Server.Implementations.EntryPoints
 
         public Task RunAsync()
         {
-            _libraryManager.ItemAdded += OnLibraryItemAdded;
-            _libraryManager.ItemUpdated += OnLibraryItemUpdated;
-            _libraryManager.ItemRemoved += OnLibraryItemRemoved;
+            _itemService.ItemAdded += OnLibraryItemAdded;
+            _itemService.ItemUpdated += OnLibraryItemUpdated;
+            _itemService.ItemRemoved += OnLibraryItemRemoved;
 
             _providerManager.RefreshCompleted += OnProviderRefreshCompleted;
             _providerManager.RefreshStarted += OnProviderRefreshStarted;
@@ -114,7 +120,7 @@ namespace Emby.Server.Implementations.EntryPoints
             {
             }
 
-            var collectionFolders = _libraryManager.GetCollectionFolders(item);
+            var collectionFolders = _libraryCollectionManager.GetCollectionFolders(item);
 
             foreach (var collectionFolder in collectionFolders)
             {
@@ -485,9 +491,9 @@ namespace Emby.Server.Implementations.EntryPoints
                     LibraryUpdateTimer = null;
                 }
 
-                _libraryManager.ItemAdded -= OnLibraryItemAdded;
-                _libraryManager.ItemUpdated -= OnLibraryItemUpdated;
-                _libraryManager.ItemRemoved -= OnLibraryItemRemoved;
+                _itemService.ItemAdded -= OnLibraryItemAdded;
+                _itemService.ItemUpdated -= OnLibraryItemUpdated;
+                _itemService.ItemRemoved -= OnLibraryItemRemoved;
 
                 _providerManager.RefreshCompleted -= OnProviderRefreshCompleted;
                 _providerManager.RefreshStarted -= OnProviderRefreshStarted;

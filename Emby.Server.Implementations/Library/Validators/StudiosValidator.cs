@@ -15,12 +15,7 @@ namespace Emby.Server.Implementations.Library.Validators
     /// </summary>
     public class StudiosValidator
     {
-        /// <summary>
-        /// The library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
-
-        private readonly IItemRepository _itemRepo;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// The logger.
@@ -30,14 +25,14 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <summary>
         /// Initializes a new instance of the <see cref="StudiosValidator" /> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="itemRepo">The item repository.</param>
-        public StudiosValidator(ILibraryManager libraryManager, ILogger<StudiosValidator> logger, IItemRepository itemRepo)
+        /// <param name="itemService">The item repository.</param>
+        public StudiosValidator(
+            ILogger<StudiosValidator> logger,
+            IItemService itemService)
         {
-            _libraryManager = libraryManager;
             _logger = logger;
-            _itemRepo = itemRepo;
+            _itemService = itemService;
         }
 
         /// <summary>
@@ -48,7 +43,7 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <returns>Task.</returns>
         public async Task Run(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            var names = _itemRepo.GetStudioNames();
+            var names = _itemService.GetStudioNames();
 
             var numComplete = 0;
             var count = names.Count;
@@ -57,7 +52,7 @@ namespace Emby.Server.Implementations.Library.Validators
             {
                 try
                 {
-                    var item = _libraryManager.GetStudio(name);
+                    var item = _itemService.GetStudio(name);
 
                     await item.RefreshMetadata(cancellationToken).ConfigureAwait(false);
                 }
@@ -79,7 +74,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(percent);
             }
 
-            var deadEntities = _libraryManager.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Studio },
                 IsDeadStudio = true,
@@ -90,13 +85,12 @@ namespace Emby.Server.Implementations.Library.Validators
             {
                 _logger.LogInformation("Deleting dead {ItemType} {ItemId} {ItemName}", item.GetType().Name, item.Id.ToString("N", CultureInfo.InvariantCulture), item.Name);
 
-                _libraryManager.DeleteItem(
+                _itemService.DeleteItem(
                     item,
                     new DeleteOptions
                     {
                         DeleteFileLocation = false
-                    },
-                    false);
+                    });
             }
 
             progress.Report(100);

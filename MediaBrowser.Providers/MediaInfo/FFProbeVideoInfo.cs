@@ -42,6 +42,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly ILibraryManager _libraryManager;
         private readonly AudioResolver _audioResolver;
         private readonly SubtitleResolver _subtitleResolver;
+        private readonly ILibraryOptionsManager _libraryOptionsManager;
         private readonly IMediaSourceManager _mediaSourceManager;
 
         public FFProbeVideoInfo(
@@ -57,7 +58,8 @@ namespace MediaBrowser.Providers.MediaInfo
             IChapterManager chapterManager,
             ILibraryManager libraryManager,
             AudioResolver audioResolver,
-            SubtitleResolver subtitleResolver)
+            SubtitleResolver subtitleResolver,
+            ILibraryOptionsManager libraryOptionsManager)
         {
             _logger = logger;
             _mediaSourceManager = mediaSourceManager;
@@ -72,6 +74,7 @@ namespace MediaBrowser.Providers.MediaInfo
             _libraryManager = libraryManager;
             _audioResolver = audioResolver;
             _subtitleResolver = subtitleResolver;
+            _libraryOptionsManager = libraryOptionsManager;
         }
 
         public async Task<ItemUpdateType> ProbeVideo<T>(
@@ -239,7 +242,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 chapters = Array.Empty<ChapterInfo>();
             }
 
-            var libraryOptions = _libraryManager.GetLibraryOptions(video);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
 
             if (mediaInfo is not null)
             {
@@ -551,7 +554,7 @@ namespace MediaBrowser.Providers.MediaInfo
 
             var subtitleOptions = _config.GetConfiguration<SubtitleOptions>("subtitles");
 
-            var libraryOptions = _libraryManager.GetLibraryOptions(video);
+            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
 
             string[] subtitleDownloadLanguages;
             bool skipIfEmbeddedSubtitlesPresent;
