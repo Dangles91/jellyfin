@@ -34,7 +34,7 @@ namespace Jellyfin.Api.Helpers;
 /// </summary>
 public class DynamicHlsHelper
 {
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IUserManager _userManager;
     private readonly IDlnaManager _dlnaManager;
     private readonly IMediaSourceManager _mediaSourceManager;
@@ -50,7 +50,7 @@ public class DynamicHlsHelper
     /// <summary>
     /// Initializes a new instance of the <see cref="DynamicHlsHelper"/> class.
     /// </summary>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
@@ -63,7 +63,7 @@ public class DynamicHlsHelper
     /// <param name="httpContextAccessor">Instance of the <see cref="IHttpContextAccessor"/> interface.</param>
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
     public DynamicHlsHelper(
-        ILibraryManager libraryManager,
+        IItemService itemService,
         IUserManager userManager,
         IDlnaManager dlnaManager,
         IMediaSourceManager mediaSourceManager,
@@ -76,7 +76,7 @@ public class DynamicHlsHelper
         IHttpContextAccessor httpContextAccessor,
         EncodingHelper encodingHelper)
     {
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _userManager = userManager;
         _dlnaManager = dlnaManager;
         _mediaSourceManager = mediaSourceManager;
@@ -130,7 +130,7 @@ public class DynamicHlsHelper
                 _httpContextAccessor.HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,

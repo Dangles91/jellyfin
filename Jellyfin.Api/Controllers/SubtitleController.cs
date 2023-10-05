@@ -39,42 +39,42 @@ namespace Jellyfin.Api.Controllers;
 public class SubtitleController : BaseJellyfinApiController
 {
     private readonly IServerConfigurationManager _serverConfigurationManager;
-    private readonly ILibraryManager _libraryManager;
     private readonly ISubtitleManager _subtitleManager;
     private readonly ISubtitleEncoder _subtitleEncoder;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
+    private readonly IItemService _itemService;
     private readonly ILogger<SubtitleController> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SubtitleController"/> class.
     /// </summary>
     /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="subtitleManager">Instance of <see cref="ISubtitleManager"/> interface.</param>
     /// <param name="subtitleEncoder">Instance of <see cref="ISubtitleEncoder"/> interface.</param>
     /// <param name="mediaSourceManager">Instance of <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
+    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     /// <param name="logger">Instance of <see cref="ILogger{SubtitleController}"/> interface.</param>
     public SubtitleController(
         IServerConfigurationManager serverConfigurationManager,
-        ILibraryManager libraryManager,
         ISubtitleManager subtitleManager,
         ISubtitleEncoder subtitleEncoder,
         IMediaSourceManager mediaSourceManager,
         IProviderManager providerManager,
         IFileSystem fileSystem,
+        IItemService itemService,
         ILogger<SubtitleController> logger)
     {
         _serverConfigurationManager = serverConfigurationManager;
-        _libraryManager = libraryManager;
         _subtitleManager = subtitleManager;
         _subtitleEncoder = subtitleEncoder;
         _mediaSourceManager = mediaSourceManager;
         _providerManager = providerManager;
         _fileSystem = fileSystem;
+        _itemService = itemService;
         _logger = logger;
     }
 
@@ -94,7 +94,7 @@ public class SubtitleController : BaseJellyfinApiController
         [FromRoute, Required] Guid itemId,
         [FromRoute, Required] int index)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -121,7 +121,7 @@ public class SubtitleController : BaseJellyfinApiController
         [FromRoute, Required] string language,
         [FromQuery] bool? isPerfectMatch)
     {
-        var video = (Video)_libraryManager.GetItemById(itemId);
+        var video = (Video)_itemService.GetItemById(itemId);
 
         return await _subtitleManager.SearchSubtitles(video, language, isPerfectMatch, false, CancellationToken.None).ConfigureAwait(false);
     }
@@ -140,7 +140,7 @@ public class SubtitleController : BaseJellyfinApiController
         [FromRoute, Required] Guid itemId,
         [FromRoute, Required] string subtitleId)
     {
-        var video = (Video)_libraryManager.GetItemById(itemId);
+        var video = (Video)_itemService.GetItemById(itemId);
 
         try
         {
@@ -222,7 +222,7 @@ public class SubtitleController : BaseJellyfinApiController
 
         if (string.IsNullOrEmpty(format))
         {
-            var item = (Video)_libraryManager.GetItemById(itemId.Value);
+            var item = (Video)_itemService.GetItemById(itemId.Value);
 
             var idString = itemId.Value.ToString("N", CultureInfo.InvariantCulture);
             var mediaSource = _mediaSourceManager.GetStaticMediaSources(item, false)
@@ -332,7 +332,7 @@ public class SubtitleController : BaseJellyfinApiController
         [FromRoute, Required] string mediaSourceId,
         [FromQuery, Required] int segmentLength)
     {
-        var item = (Video)_libraryManager.GetItemById(itemId);
+        var item = (Video)_itemService.GetItemById(itemId);
 
         var mediaSource = await _mediaSourceManager.GetMediaSource(item, mediaSourceId, null, false, CancellationToken.None).ConfigureAwait(false);
 
@@ -404,7 +404,7 @@ public class SubtitleController : BaseJellyfinApiController
         [FromRoute, Required] Guid itemId,
         [FromBody, Required] UploadSubtitleDto body)
     {
-        var video = (Video)_libraryManager.GetItemById(itemId);
+        var video = (Video)_itemService.GetItemById(itemId);
         var data = Convert.FromBase64String(body.Data);
         var memoryStream = new MemoryStream(data, 0, data.Length, false, true);
         await using (memoryStream.ConfigureAwait(false))
@@ -445,7 +445,7 @@ public class SubtitleController : BaseJellyfinApiController
         long? endPositionTicks,
         bool copyTimestamps)
     {
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
 
         return _subtitleEncoder.GetSubtitles(
             item,

@@ -22,17 +22,17 @@ namespace Emby.Server.Implementations.Images
     /// </summary>
     public class MusicGenreImageProvider : BaseDynamicImageProvider<MusicGenre>
     {
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         public MusicGenreImageProvider(
             IFileSystem fileSystem,
             IProviderManager providerManager,
             IApplicationPaths applicationPaths,
             IImageProcessor imageProcessor,
-            IItemService itemService)
+            IItemQueryService itemQueryService)
             : base(fileSystem, providerManager, applicationPaths, imageProcessor)
         {
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Emby.Server.Implementations.Images
         /// <returns>Any relevant children objects.</returns>
         protected override IReadOnlyList<BaseItem> GetItemsWithImages(BaseItem item)
         {
-            return _itemService.GetItemList(new InternalItemsQuery
+            return _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 Genres = new[] { item.Name },
                 IncludeItemTypes = new[]

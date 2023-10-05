@@ -16,6 +16,7 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Channels;
+using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities.Audio;
@@ -481,11 +482,17 @@ namespace MediaBrowser.Controller.Entities
 
         protected static ILibraryOptionsManager LibraryOptionsManager { get; set; }
 
-        protected static ILibraryCollectionManager LibraryCollectionManager { get; set; }
+        protected static ICollectionManager LibraryCollectionManager { get; set; }
 
         protected static IItemContentTypeProvider ItemContentTypeProvider { get; set; }
 
         protected static IUserViewBuilder UserViewBuilder { get; set; }
+
+        protected static IItemQueryService ItemQueryService { get; set; }
+
+        protected static ILibraryItemIdGenerator ItemIdGenerator { get; set; }
+
+        protected static IItemResolveArgsFactory ItemResolveArgsFactory { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the forced sort.
@@ -801,9 +808,12 @@ namespace MediaBrowser.Controller.Entities
         /// <param name="libraryRootFolderManager">Instance of the <see cref="ILibraryRootFolderManager"/> interface.</param>
         /// <param name="itemPathResolver">Instance of the <see cref="IItemPathResolver"/> interface.</param>
         /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
-        /// <param name="libraryCollectionManager">Instance of the <see cref="ILibraryCollectionManager"/> interface.</param>
+        /// <param name="libraryCollectionManager">Instance of the <see cref="ICollectionManager"/> interface.</param>
         /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
         /// <param name="userViewBuilder">Instance of the <see cref="IUserViewBuilder"/> interface.</param>
+        /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
+        /// <param name="libraryItemIdGenerator">Instance of the <see cref="ILibraryItemIdGenerator"/> interface.</param>
+        /// <param name="itemResolveArgsFactory">Instance of the <see cref="IItemResolveArgsFactory"/> interface.</param>
         public static void ConfigureDependencies(
             ILogger<BaseItem> logger,
             ILibraryManager libraryManager,
@@ -818,9 +828,12 @@ namespace MediaBrowser.Controller.Entities
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemPathResolver itemPathResolver,
             ILibraryOptionsManager libraryOptionsManager,
-            ILibraryCollectionManager libraryCollectionManager,
+            ICollectionManager libraryCollectionManager,
             IItemContentTypeProvider itemContentTypeProvider,
-            IUserViewBuilder userViewBuilder)
+            IUserViewBuilder userViewBuilder,
+            IItemQueryService itemQueryService,
+            ILibraryItemIdGenerator libraryItemIdGenerator,
+            IItemResolveArgsFactory itemResolveArgsFactory)
         {
             Logger = logger;
             LibraryManager = libraryManager;
@@ -837,6 +850,9 @@ namespace MediaBrowser.Controller.Entities
             LibraryCollectionManager = libraryCollectionManager;
             ItemContentTypeProvider = itemContentTypeProvider;
             UserViewBuilder = userViewBuilder;
+            ItemQueryService = itemQueryService;
+            ItemIdGenerator = libraryItemIdGenerator;
+            ItemResolveArgsFactory = itemResolveArgsFactory;
         }
 
         public virtual double GetDefaultPrimaryImageAspectRatio()
@@ -1777,7 +1793,7 @@ namespace MediaBrowser.Controller.Entities
             {
                 path = FileSystem.MakeAbsolutePath(ContainingFolderPath, path);
 
-                var itemByPath = ItemService.FindItemByPath(path, null);
+                var itemByPath = ItemQueryService.FindItemByPath(path, null);
 
                 if (itemByPath is null)
                 {
@@ -1789,7 +1805,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (!string.IsNullOrEmpty(info.LibraryItemId))
             {
-                var item = LibraryManager.GetItemById(info.LibraryItemId);
+                var item = LibraryManager.GetItemById(new Guid(info.LibraryItemId));
 
                 if (item is null)
                 {
@@ -2393,7 +2409,7 @@ namespace MediaBrowser.Controller.Entities
         {
             if (protocol == MediaProtocol.File)
             {
-                return LibraryManager.GetPathAfterNetworkSubstitution(path, item);
+                return ItemPathResolver.GetPathAfterNetworkSubstitution(path, item);
             }
 
             return path;
@@ -2488,7 +2504,9 @@ namespace MediaBrowser.Controller.Entities
                 SearchResult = null
             };
 
-            var id = LibraryManager.GetNewItemId(path, typeof(Video));
+            // NOTE: Dangles: We can remove this dependency on ItemIdGenerator by creating a new
+            // method in itemService to retrieve by path.
+            var id = ItemIdGenerator.Generate(path, typeof(Video));
 
             // Try to retrieve it from the db. If we don't find it, use the resolved version
             var video = LibraryManager.GetItemById(id) as Video;

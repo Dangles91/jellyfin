@@ -18,23 +18,23 @@ namespace Jellyfin.Api.Controllers;
 [Authorize(Policy = Policies.RequiresElevation)]
 public class ItemRefreshController : BaseJellyfinApiController
 {
-    private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
+    private readonly IItemService _itemService;
     private readonly IFileSystem _fileSystem;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemRefreshController"/> class.
     /// </summary>
-    /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
+    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
     public ItemRefreshController(
-        ILibraryManager libraryManager,
         IProviderManager providerManager,
+        IItemService itemService,
         IFileSystem fileSystem)
     {
-        _libraryManager = libraryManager;
         _providerManager = providerManager;
+        _itemService = itemService;
         _fileSystem = fileSystem;
     }
 
@@ -60,7 +60,7 @@ public class ItemRefreshController : BaseJellyfinApiController
         [FromQuery] bool replaceAllMetadata = false,
         [FromQuery] bool replaceAllImages = false)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();

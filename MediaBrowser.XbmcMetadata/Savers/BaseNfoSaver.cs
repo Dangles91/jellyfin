@@ -102,24 +102,28 @@ namespace MediaBrowser.XbmcMetadata.Savers
         protected BaseNfoSaver(
             IFileSystem fileSystem,
             IServerConfigurationManager configurationManager,
-            ILibraryManager libraryManager,
+            IItemService itemService,
+            IItemPathResolver itemPathResolver,
             IUserManager userManager,
             IUserDataManager userDataManager,
             ILogger<BaseNfoSaver> logger)
         {
+            ItemService = itemService;
             Logger = logger;
             UserDataManager = userDataManager;
             UserManager = userManager;
-            LibraryManager = libraryManager;
             ConfigurationManager = configurationManager;
             FileSystem = fileSystem;
+            ItemPathResolver = itemPathResolver;
         }
 
         protected IFileSystem FileSystem { get; }
 
         protected IServerConfigurationManager ConfigurationManager { get; }
 
-        protected ILibraryManager LibraryManager { get; }
+        protected IItemPathResolver ItemPathResolver { get; }
+
+        protected IItemService ItemService { get; }
 
         protected IUserManager UserManager { get; }
 
@@ -263,7 +267,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
 
                 if (baseItem is not null)
                 {
-                    AddCommonNodes(baseItem, writer, LibraryManager, UserManager, UserDataManager, ConfigurationManager);
+                    AddCommonNodes(baseItem, writer);
                 }
 
                 WriteCustomElements(item, writer);
@@ -431,11 +435,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
         /// </summary>
         private void AddCommonNodes(
             BaseItem item,
-            XmlWriter writer,
-            ILibraryManager libraryManager,
-            IUserManager userManager,
-            IUserDataManager userDataRepo,
-            IServerConfigurationManager config)
+            XmlWriter writer)
         {
             var writtenProviderIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -443,7 +443,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
                 .StripHtml()
                 .Replace("&quot;", "'", StringComparison.Ordinal);
 
-            var options = config.GetNfoConfiguration();
+            var options = ConfigurationManager.GetNfoConfiguration();
 
             if (item is MusicArtist)
             {
@@ -484,7 +484,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
                 writer.WriteElementString("originaltitle", item.OriginalTitle);
             }
 
-            var people = libraryManager.GetPeople(item);
+            var people = ItemService.GetPeople(item);
 
             var directors = people
                 .Where(i => i.IsType(PersonKind.Director))
@@ -780,12 +780,12 @@ namespace MediaBrowser.XbmcMetadata.Savers
 
             if (options.SaveImagePathsInNfo)
             {
-                AddImages(item, writer, libraryManager);
+                AddImages(item, writer);
             }
 
-            AddUserData(item, writer, userManager, userDataRepo, options);
+            AddUserData(item, writer, options);
 
-            AddActors(people, writer, libraryManager, options.SaveImagePathsInNfo);
+            AddActors(people, writer, options.SaveImagePathsInNfo);
 
             if (item is BoxSet folder)
             {
@@ -828,7 +828,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
             return url.Replace(YouTubeWatchUrl, "plugin://plugin.video.youtube/?action=play_video&videoid=", StringComparison.OrdinalIgnoreCase);
         }
 
-        private void AddImages(BaseItem item, XmlWriter writer, ILibraryManager libraryManager)
+        private void AddImages(BaseItem item, XmlWriter writer)
         {
             writer.WriteStartElement("art");
 
@@ -836,18 +836,18 @@ namespace MediaBrowser.XbmcMetadata.Savers
 
             if (image is not null)
             {
-                writer.WriteElementString("poster", GetImagePathToSave(image, libraryManager));
+                writer.WriteElementString("poster", GetImagePathToSave(image));
             }
 
             foreach (var backdrop in item.GetImages(ImageType.Backdrop))
             {
-                writer.WriteElementString("fanart", GetImagePathToSave(backdrop, libraryManager));
+                writer.WriteElementString("fanart", GetImagePathToSave(backdrop));
             }
 
             writer.WriteEndElement();
         }
 
-        private void AddUserData(BaseItem item, XmlWriter writer, IUserManager userManager, IUserDataManager userDataRepo, XbmcMetadataOptions options)
+        private void AddUserData(BaseItem item, XmlWriter writer, XbmcMetadataOptions options)
         {
             var userId = options.UserId;
             if (string.IsNullOrWhiteSpace(userId))
@@ -855,7 +855,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
                 return;
             }
 
-            var user = userManager.GetUserById(Guid.Parse(userId));
+            var user = UserManager.GetUserById(Guid.Parse(userId));
 
             if (user is null)
             {
@@ -867,7 +867,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
                 return;
             }
 
-            var userdata = userDataRepo.GetUserData(user, item);
+            var userdata = UserDataManager.GetUserData(user, item);
 
             writer.WriteElementString(
                 "isuserfavorite",
@@ -911,7 +911,7 @@ namespace MediaBrowser.XbmcMetadata.Savers
             writer.WriteEndElement();
         }
 
-        private void AddActors(List<PersonInfo> people, XmlWriter writer, ILibraryManager libraryManager, bool saveImagePath)
+        private void AddActors(List<PersonInfo> people, XmlWriter writer, bool saveImagePath)
         {
             foreach (var person in people)
             {
@@ -946,14 +946,14 @@ namespace MediaBrowser.XbmcMetadata.Savers
 
                 if (saveImagePath)
                 {
-                    var personEntity = libraryManager.GetPerson(person.Name);
+                    var personEntity = ItemService.GetPerson(person.Name);
                     var image = personEntity.GetImageInfo(ImageType.Primary, 0);
 
                     if (image is not null)
                     {
                         writer.WriteElementString(
                             "thumb",
-                            GetImagePathToSave(image, libraryManager));
+                            GetImagePathToSave(image));
                     }
                 }
 
@@ -961,14 +961,14 @@ namespace MediaBrowser.XbmcMetadata.Savers
             }
         }
 
-        private string GetImagePathToSave(ItemImageInfo image, ILibraryManager libraryManager)
+        private string GetImagePathToSave(ItemImageInfo image)
         {
             if (!image.IsLocalFile)
             {
                 return image.Path;
             }
 
-            return libraryManager.GetPathAfterNetworkSubstitution(image.Path);
+            return ItemPathResolver.GetPathAfterNetworkSubstitution(image.Path);
         }
 
         private void AddCustomTags(string path, IReadOnlyCollection<string> xmlTagsUsed, XmlWriter writer, ILogger<BaseNfoSaver> logger)

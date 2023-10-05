@@ -18,22 +18,22 @@ namespace Emby.Server.Implementations.Images
     public abstract class BaseFolderImageProvider<T> : BaseDynamicImageProvider<T>
         where T : Folder, new()
     {
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         protected BaseFolderImageProvider(
             IFileSystem fileSystem,
             IProviderManager providerManager,
             IApplicationPaths applicationPaths,
             IImageProcessor imageProcessor,
-            IItemService itemService)
+            IItemQueryService itemQueryService)
             : base(fileSystem, providerManager, applicationPaths, imageProcessor)
         {
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         protected override IReadOnlyList<BaseItem> GetItemsWithImages(BaseItem item)
         {
-            return _itemService.GetItemList(new InternalItemsQuery
+            return _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 Parent = item,
                 Recursive = true,

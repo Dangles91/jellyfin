@@ -24,7 +24,6 @@ namespace Emby.Dlna.ContentDirectory
     /// </summary>
     public class ContentDirectoryService : BaseService, IContentDirectory
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly IImageProcessor _imageProcessor;
         private readonly IUserDataManager _userDataManager;
         private readonly IDlnaManager _dlna;
@@ -37,6 +36,7 @@ namespace Emby.Dlna.ContentDirectory
         private readonly ITVSeriesManager _tvSeriesManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContentDirectoryService"/> class.
@@ -44,7 +44,6 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="dlna">The <see cref="IDlnaManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="userDataManager">The <see cref="IUserDataManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="imageProcessor">The <see cref="IImageProcessor"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
-        /// <param name="libraryManager">The <see cref="ILibraryManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="config">The <see cref="IServerConfigurationManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="userManager">The <see cref="IUserManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="logger">The <see cref="ILogger{ContentDirectoryService}"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
@@ -56,11 +55,11 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="libraryRootFolderManager">The <see cref="ILibraryRootFolderManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="itemService">The <see cref="IItemService"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
+        /// <param name="itemQueryService">The <see cref="IItemQueryService"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         public ContentDirectoryService(
             IDlnaManager dlna,
             IUserDataManager userDataManager,
             IImageProcessor imageProcessor,
-            ILibraryManager libraryManager,
             IServerConfigurationManager config,
             IUserManager userManager,
             ILogger<ContentDirectoryService> logger,
@@ -71,13 +70,13 @@ namespace Emby.Dlna.ContentDirectory
             IMediaEncoder mediaEncoder,
             ITVSeriesManager tvSeriesManager,
             ILibraryRootFolderManager libraryRootFolderManager,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
             : base(logger, httpClient)
         {
             _dlna = dlna;
             _userDataManager = userDataManager;
             _imageProcessor = imageProcessor;
-            _libraryManager = libraryManager;
             _config = config;
             _userManager = userManager;
             _localization = localization;
@@ -87,6 +86,7 @@ namespace Emby.Dlna.ContentDirectory
             _tvSeriesManager = tvSeriesManager;
             _libraryRootFolderManager = libraryRootFolderManager;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -135,7 +135,8 @@ namespace Emby.Dlna.ContentDirectory
                 _mediaEncoder,
                 _tvSeriesManager,
                 _itemService,
-                _libraryRootFolderManager)
+                _libraryRootFolderManager,
+                _itemQueryService)
                 .ProcessControlRequestAsync(request);
         }
 

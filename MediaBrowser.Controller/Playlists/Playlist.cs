@@ -189,7 +189,7 @@ namespace MediaBrowser.Controller.Playlists
         {
             if (item is MusicGenre musicGenre)
             {
-                return ItemService.GetItemList(new InternalItemsQuery(user)
+                return ItemQueryService.GetItemList(new InternalItemsQuery(user)
                 {
                     Recursive = true,
                     IncludeItemTypes = new[] { BaseItemKind.Audio },
@@ -201,7 +201,7 @@ namespace MediaBrowser.Controller.Playlists
 
             if (item is MusicArtist musicArtist)
             {
-                return ItemService.GetItemList(new InternalItemsQuery(user)
+                return ItemQueryService.GetItemList(new InternalItemsQuery(user)
                 {
                     Recursive = true,
                     IncludeItemTypes = new[] { BaseItemKind.Audio },

@@ -37,6 +37,7 @@ public class UserLibraryController : BaseJellyfinApiController
     private readonly IDtoService _dtoService;
     private readonly IUserViewManager _userViewManager;
     private readonly IFileSystem _fileSystem;
+    private readonly IItemService _itemService;
     private readonly ILyricManager _lyricManager;
 
     /// <summary>
@@ -48,6 +49,7 @@ public class UserLibraryController : BaseJellyfinApiController
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="userViewManager">Instance of the <see cref="IUserViewManager"/> interface.</param>
     /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="lyricManager">Instance of the <see cref="ILyricManager"/> interface.</param>
     public UserLibraryController(
         IUserManager userManager,
@@ -56,6 +58,7 @@ public class UserLibraryController : BaseJellyfinApiController
         IDtoService dtoService,
         IUserViewManager userViewManager,
         IFileSystem fileSystem,
+        IItemService itemService,
         ILyricManager lyricManager)
     {
         _userManager = userManager;
@@ -64,6 +67,7 @@ public class UserLibraryController : BaseJellyfinApiController
         _dtoService = dtoService;
         _userViewManager = userViewManager;
         _fileSystem = fileSystem;
+        _itemService = itemService;
         _lyricManager = lyricManager;
     }
 
@@ -86,7 +90,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -147,7 +151,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -187,7 +191,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -223,7 +227,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -259,7 +263,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -296,7 +300,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -332,7 +336,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -377,7 +381,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -560,7 +564,7 @@ public class UserLibraryController : BaseJellyfinApiController
 
         var item = itemId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {

@@ -25,6 +25,7 @@ public class PersonsController : BaseJellyfinApiController
 {
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
+    private readonly IItemService _itemService;
     private readonly IUserManager _userManager;
 
     /// <summary>
@@ -32,14 +33,17 @@ public class PersonsController : BaseJellyfinApiController
     /// </summary>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     public PersonsController(
         ILibraryManager libraryManager,
         IDtoService dtoService,
+        IItemService itemService,
         IUserManager userManager)
     {
         _libraryManager = libraryManager;
         _dtoService = dtoService;
+        _itemService = itemService;
         _userManager = userManager;
     }
 
@@ -123,7 +127,7 @@ public class PersonsController : BaseJellyfinApiController
         var dtoOptions = new DtoOptions()
             .AddClientFields(User);
 
-        var item = _libraryManager.GetPerson(name);
+        var item = _itemService.GetPerson(name);
         if (item is null)
         {
             return NotFound();

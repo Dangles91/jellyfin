@@ -23,6 +23,7 @@ namespace MediaBrowser.Providers.TV
     {
         private readonly ILocalizationManager _localizationManager;
         private readonly IItemService _itemService;
+        private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
 
         public SeriesMetadataService(
             IServerConfigurationManager serverConfigurationManager,
@@ -32,11 +33,13 @@ namespace MediaBrowser.Providers.TV
             ILibraryManager libraryManager,
             ILocalizationManager localizationManager,
             ILibraryOptionsManager libraryOptionsManager,
-            IItemService itemService)
+            IItemService itemService,
+            ILibraryItemIdGenerator libraryItemIdGenerator)
             : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
         {
             _localizationManager = localizationManager;
             _itemService = itemService;
+            _libraryItemIdGenerator = libraryItemIdGenerator;
         }
 
         /// <inheritdoc />
@@ -255,7 +258,7 @@ namespace MediaBrowser.Providers.TV
             {
                 Name = seasonName,
                 IndexNumber = seasonNumber,
-                Id = LibraryManager.GetNewItemId(
+                Id = _libraryItemIdGenerator.Generate(
                     series.Id + (seasonNumber ?? -1).ToString(CultureInfo.InvariantCulture) + seasonName,
                     typeof(Season)),
                 IsVirtualItem = false,

@@ -24,33 +24,30 @@ namespace MediaBrowser.Providers.MediaInfo
 {
     public class SubtitleScheduledTask : IScheduledTask
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _config;
         private readonly ISubtitleManager _subtitleManager;
         private readonly ILogger<SubtitleScheduledTask> _logger;
         private readonly ILocalizationManager _localization;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         public SubtitleScheduledTask(
-            ILibraryManager libraryManager,
             IServerConfigurationManager config,
             ISubtitleManager subtitleManager,
             ILogger<SubtitleScheduledTask> logger,
             ILocalizationManager localization,
             ILibraryOptionsManager libraryOptionsManager,
             ILibraryRootFolderManager libraryRootFolderManager,
-            IItemService itemService)
+            IItemQueryService itemQueryService)
         {
-            _libraryManager = libraryManager;
             _config = config;
             _subtitleManager = subtitleManager;
             _logger = logger;
             _localization = localization;
             _libraryOptionsManager = libraryOptionsManager;
             _libraryRootFolderManager = libraryRootFolderManager;
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         public string Name => _localization.GetLocalizedString("TaskDownloadMissingSubtitles");
@@ -131,7 +128,7 @@ namespace MediaBrowser.Providers.MediaInfo
                         query.HasNoExternalSubtitleTrackWithLanguage = lang;
                     }
 
-                    var videosByLanguage = _itemService.GetItemList(query);
+                    var videosByLanguage = _itemQueryService.GetItemList(query);
 
                     foreach (var video in videosByLanguage)
                     {

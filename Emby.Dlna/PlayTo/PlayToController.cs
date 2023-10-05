@@ -476,7 +476,7 @@ namespace Emby.Dlna.PlayTo
 
         private void AddItemFromId(Guid id, List<BaseItem> list)
         {
-            var item = _libraryManager.GetItemById(id);
+            var item = _itemService.GetItemById(id);
             if (item.MediaType == MediaType.Audio || item.MediaType == MediaType.Video)
             {
                 list.Add(item);

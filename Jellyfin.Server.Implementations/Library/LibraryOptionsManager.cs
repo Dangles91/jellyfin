@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using CacheManager.Core.Logging;
 using Jellyfin.Extensions.Json;
 using MediaBrowser.Common;
+using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Configuration;
@@ -27,7 +28,7 @@ namespace Jellyfin.Server.Implementations.Library
         private static readonly ConcurrentDictionary<string, LibraryOptions> _libraryOptionsCache = new();
         private static readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
-        private readonly ILibraryCollectionManager _libraryCollectionManager;
+        private readonly ICollectionManager _libraryCollectionManager;
         private readonly IFileSystem _fileSystem;
         private readonly IXmlSerializer _xmlSerializer;
         private readonly ILogger<LibraryOptionsManager> _logger;
@@ -35,12 +36,12 @@ namespace Jellyfin.Server.Implementations.Library
         /// <summary>
         /// Initializes a new instance of the <see cref="LibraryOptionsManager"/> class.
         /// </summary>
-        /// <param name="libraryCollectionManager">The configured <see cref="ILibraryCollectionManager"/>.</param>
+        /// <param name="libraryCollectionManager">The configured <see cref="ICollectionManager"/>.</param>
         /// <param name="fileSystem">The <see cref="IFileSystem"/> to use.</param>
         /// <param name="xmlSerializer">The <see cref="IXmlSerializer"/> to use.</param>
         /// <param name="logger">The logger for this class.</param>
         public LibraryOptionsManager(
-            ILibraryCollectionManager libraryCollectionManager,
+            ICollectionManager libraryCollectionManager,
             IFileSystem fileSystem,
             IXmlSerializer xmlSerializer,
             ILogger<LibraryOptionsManager> logger)

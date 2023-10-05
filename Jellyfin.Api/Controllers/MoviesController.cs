@@ -30,6 +30,7 @@ public class MoviesController : BaseJellyfinApiController
     private readonly IDtoService _dtoService;
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MoviesController"/> class.
@@ -38,16 +39,19 @@ public class MoviesController : BaseJellyfinApiController
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public MoviesController(
         IUserManager userManager,
         IDtoService dtoService,
         IServerConfigurationManager serverConfigurationManager,
-        IItemService itemService)
+        IItemService itemService,
+        IItemQueryService itemQueryService)
     {
         _userManager = userManager;
         _dtoService = dtoService;
         _serverConfigurationManager = serverConfigurationManager;
         _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -96,7 +100,7 @@ public class MoviesController : BaseJellyfinApiController
             DtoOptions = dtoOptions
         };
 
-        var recentlyPlayedMovies = _itemService.GetItemList(query);
+        var recentlyPlayedMovies = _itemQueryService.GetItemList(query);
 
         var itemTypes = new List<BaseItemKind> { BaseItemKind.Movie };
         if (_serverConfigurationManager.Configuration.EnableExternalContentInSuggestions)
@@ -105,7 +109,7 @@ public class MoviesController : BaseJellyfinApiController
             itemTypes.Add(BaseItemKind.LiveTvProgram);
         }
 
-        var likedMovies = _itemService.GetItemList(new InternalItemsQuery(user)
+        var likedMovies = _itemQueryService.GetItemList(new InternalItemsQuery(user)
         {
             IncludeItemTypes = itemTypes.ToArray(),
             IsMovie = true,
@@ -190,7 +194,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var name in names)
         {
-            var items = _itemService.GetItemList(
+            var items = _itemQueryService.GetItemList(
                 new InternalItemsQuery(user)
                 {
                     Person = name,
@@ -231,7 +235,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var name in names)
         {
-            var items = _itemService.GetItemList(new InternalItemsQuery(user)
+            var items = _itemQueryService.GetItemList(new InternalItemsQuery(user)
             {
                 Person = name,
                 // Account for duplicates by IMDb id, since the database doesn't support this yet
@@ -270,7 +274,7 @@ public class MoviesController : BaseJellyfinApiController
 
         foreach (var item in baselineItems)
         {
-            var similar = _itemService.GetItemList(new InternalItemsQuery(user)
+            var similar = _itemQueryService.GetItemList(new InternalItemsQuery(user)
             {
                 Limit = itemLimit,
                 IncludeItemTypes = itemTypes.ToArray(),

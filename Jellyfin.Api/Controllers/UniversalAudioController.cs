@@ -26,7 +26,7 @@ namespace Jellyfin.Api.Controllers;
 [Route("")]
 public class UniversalAudioController : BaseJellyfinApiController
 {
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly ILogger<UniversalAudioController> _logger;
     private readonly MediaInfoHelper _mediaInfoHelper;
     private readonly AudioHelper _audioHelper;
@@ -35,19 +35,19 @@ public class UniversalAudioController : BaseJellyfinApiController
     /// <summary>
     /// Initializes a new instance of the <see cref="UniversalAudioController"/> class.
     /// </summary>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{UniversalAudioController}"/> interface.</param>
     /// <param name="mediaInfoHelper">Instance of <see cref="MediaInfoHelper"/>.</param>
     /// <param name="audioHelper">Instance of <see cref="AudioHelper"/>.</param>
     /// <param name="dynamicHlsHelper">Instance of <see cref="DynamicHlsHelper"/>.</param>
     public UniversalAudioController(
-        ILibraryManager libraryManager,
+        IItemService itemService,
         ILogger<UniversalAudioController> logger,
         MediaInfoHelper mediaInfoHelper,
         AudioHelper audioHelper,
         DynamicHlsHelper dynamicHlsHelper)
     {
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _logger = logger;
         _mediaInfoHelper = mediaInfoHelper;
         _audioHelper = audioHelper;
@@ -116,7 +116,7 @@ public class UniversalAudioController : BaseJellyfinApiController
             .ConfigureAwait(false);
 
         // set device specific data
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
 
         foreach (var sourceInfo in info.MediaSources)
         {

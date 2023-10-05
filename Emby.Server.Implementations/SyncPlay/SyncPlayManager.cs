@@ -37,11 +37,7 @@ namespace Emby.Server.Implementations.SyncPlay
         /// The session manager.
         /// </summary>
         private readonly ISessionManager _sessionManager;
-
-        /// <summary>
-        /// The library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// The map between users and counter of active sessions.
@@ -77,17 +73,17 @@ namespace Emby.Server.Implementations.SyncPlay
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="userManager">The user manager.</param>
         /// <param name="sessionManager">The session manager.</param>
-        /// <param name="libraryManager">The library manager.</param>
+        /// <param name="itemService">The item service.</param>
         public SyncPlayManager(
             ILoggerFactory loggerFactory,
             IUserManager userManager,
             ISessionManager sessionManager,
-            ILibraryManager libraryManager)
+            IItemService itemService)
         {
             _loggerFactory = loggerFactory;
             _userManager = userManager;
             _sessionManager = sessionManager;
-            _libraryManager = libraryManager;
+            _itemService = itemService;
             _logger = loggerFactory.CreateLogger<SyncPlayManager>();
             _sessionManager.SessionEnded += OnSessionEnded;
         }
@@ -122,7 +118,7 @@ namespace Emby.Server.Implementations.SyncPlay
                     LeaveGroup(session, leaveGroupRequest, cancellationToken);
                 }
 
-                var group = new Group(_loggerFactory, _userManager, _sessionManager, _libraryManager);
+                var group = new Group(_loggerFactory, _userManager, _sessionManager, _itemService);
                 _groups[group.GroupId] = group;
 
                 if (!_sessionToGroupMap.TryAdd(session.Id, group))

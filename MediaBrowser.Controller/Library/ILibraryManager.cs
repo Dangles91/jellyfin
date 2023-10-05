@@ -33,13 +33,6 @@ namespace MediaBrowser.Controller.Library
         bool IsScanRunning { get; }
 
         /// <summary>
-        /// Gets a Person.
-        /// </summary>
-        /// <param name="name">The name of the person.</param>
-        /// <returns>Task{Person}.</returns>
-        Person GetPerson(string name);
-
-        /// <summary>
         /// Gets a Genre.
         /// </summary>
         /// <param name="name">The name of the genre.</param>
@@ -60,15 +53,6 @@ namespace MediaBrowser.Controller.Library
         /// <returns>Task{Year}.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Throws if year is invalid.</exception>
         Year GetYear(int value);
-
-        /// <summary>
-        /// Validate and refresh the People sub-set of the IBN.
-        /// The items are stored in the db but not loaded into memory until actually requested by an operation.
-        /// </summary>
-        /// <param name="progress">The progress.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        Task ValidatePeopleAsync(IProgress<double> progress, CancellationToken cancellationToken);
 
         /// <summary>
         /// Reloads the root media folder.
@@ -133,76 +117,6 @@ namespace MediaBrowser.Controller.Library
         Folder GetUserRootFolder();
 
         /// <summary>
-        /// Gets the named view.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="name">The name.</param>
-        /// <param name="parentId">The parent identifier.</param>
-        /// <param name="viewType">Type of the view.</param>
-        /// <param name="sortName">Name of the sort.</param>
-        /// <returns>The named view.</returns>
-        UserView GetNamedView(
-            User user,
-            string name,
-            Guid parentId,
-            string viewType,
-            string sortName);
-
-        /// <summary>
-        /// Gets the named view.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="name">The name.</param>
-        /// <param name="viewType">Type of the view.</param>
-        /// <param name="sortName">Name of the sort.</param>
-        /// <returns>The named view.</returns>
-        UserView GetNamedView(
-            User user,
-            string name,
-            string viewType,
-            string sortName);
-
-        /// <summary>
-        /// Gets the named view.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="viewType">Type of the view.</param>
-        /// <param name="sortName">Name of the sort.</param>
-        /// <returns>The named view.</returns>
-        UserView GetNamedView(
-            string name,
-            string viewType,
-            string sortName);
-
-        /// <summary>
-        /// Gets the named view.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="parentId">The parent identifier.</param>
-        /// <param name="viewType">Type of the view.</param>
-        /// <param name="sortName">Name of the sort.</param>
-        /// <param name="uniqueId">The unique identifier.</param>
-        /// <returns>The named view.</returns>
-        UserView GetNamedView(
-            string name,
-            Guid parentId,
-            string viewType,
-            string sortName,
-            string uniqueId);
-
-        /// <summary>
-        /// Gets the shadow view.
-        /// </summary>
-        /// <param name="parent">The parent.</param>
-        /// <param name="viewType">Type of the view.</param>
-        /// <param name="sortName">Name of the sort.</param>
-        /// <returns>The shadow view.</returns>
-        UserView GetShadowView(
-            BaseItem parent,
-            string viewType,
-            string sortName);
-
-        /// <summary>
         /// Gets the season number from path.
         /// </summary>
         /// <param name="path">The path.</param>
@@ -225,14 +139,6 @@ namespace MediaBrowser.Controller.Library
         ItemLookupInfo ParseName(string name);
 
         /// <summary>
-        /// Gets the new item identifier.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="type">The type.</param>
-        /// <returns>Guid.</returns>
-        Guid GetNewItemId(string key, Type type);
-
-        /// <summary>
         /// Finds the extras.
         /// </summary>
         /// <param name="owner">The owner.</param>
@@ -240,13 +146,6 @@ namespace MediaBrowser.Controller.Library
         /// <param name="directoryService">An instance of <see cref="IDirectoryService"/>.</param>
         /// <returns>IEnumerable&lt;BaseItem&gt;.</returns>
         IEnumerable<BaseItem> FindExtras(BaseItem owner, IReadOnlyList<FileSystemMetadata> fileSystemChildren, IDirectoryService directoryService);
-
-        /// <summary>
-        /// Gets the people.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <returns>List&lt;PersonInfo&gt;.</returns>
-        List<PersonInfo> GetPeople(BaseItem item);
 
         /// <summary>
         /// Gets the people items.
@@ -272,8 +171,6 @@ namespace MediaBrowser.Controller.Library
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The async task.</returns>
         Task UpdatePeopleAsync(BaseItem item, List<PersonInfo> people, CancellationToken cancellationToken);
-
-        string GetPathAfterNetworkSubstitution(string path, BaseItem ownerItem = null);
 
         /// <summary>
         /// Converts the image to local.

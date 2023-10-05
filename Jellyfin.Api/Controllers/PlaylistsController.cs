@@ -31,7 +31,7 @@ public class PlaylistsController : BaseJellyfinApiController
     private readonly IPlaylistManager _playlistManager;
     private readonly IDtoService _dtoService;
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PlaylistsController"/> class.
@@ -39,17 +39,17 @@ public class PlaylistsController : BaseJellyfinApiController
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="playlistManager">Instance of the <see cref="IPlaylistManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public PlaylistsController(
         IDtoService dtoService,
         IPlaylistManager playlistManager,
         IUserManager userManager,
-        ILibraryManager libraryManager)
+        IItemService itemService)
     {
         _dtoService = dtoService;
         _playlistManager = playlistManager;
         _userManager = userManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ public class PlaylistsController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var playlist = (Playlist)_libraryManager.GetItemById(playlistId);
+        var playlist = (Playlist)_itemService.GetItemById(playlistId);
         if (playlist is null)
         {
             return NotFound();

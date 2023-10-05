@@ -192,12 +192,11 @@ namespace MediaBrowser.Controller.Entities
         {
             var path = ContainingFolderPath;
 
-            var args = new ItemResolveArgs(ConfigurationManager.ApplicationPaths, LibraryOptionsManager, ItemPathResolver, ItemContentTypeProvider, FileSystem)
-            {
-                FileInfo = FileSystem.GetDirectoryInfo(path),
-                Parent = GetParent() as Folder,
-                CollectionType = CollectionType
-            };
+            var args = ItemResolveArgsFactory.Create(
+                GetParent() as Folder,
+                FileSystem.GetDirectoryInfo(path),
+                CollectionType,
+                null);
 
             // Gather child folder and files
             if (args.IsDirectory)
@@ -270,7 +269,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (result.Count == 0)
             {
-                if (ItemService.FindItemByPath(path, true) is Folder folder)
+                if (ItemQueryService.FindItemByPath(path, true) is Folder folder)
                 {
                     result.Add(folder);
                 }

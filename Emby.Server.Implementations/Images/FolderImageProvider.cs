@@ -12,8 +12,13 @@ namespace Emby.Server.Implementations.Images
 {
     public class FolderImageProvider : BaseFolderImageProvider<Folder>
     {
-        public FolderImageProvider(IFileSystem fileSystem, IProviderManager providerManager, IApplicationPaths applicationPaths, IImageProcessor imageProcessor, IItemService itemService)
-            : base(fileSystem, providerManager, applicationPaths, imageProcessor, itemService)
+        public FolderImageProvider(
+            IFileSystem fileSystem,
+            IProviderManager providerManager,
+            IApplicationPaths applicationPaths,
+            IImageProcessor imageProcessor,
+            IItemQueryService itemQueryService)
+            : base(fileSystem, providerManager, applicationPaths, imageProcessor, itemQueryService)
         {
         }
 

@@ -46,6 +46,7 @@ public class DynamicHlsController : BaseJellyfinApiController
     private const TranscodingJobType TranscodingJobType = MediaBrowser.Controller.MediaEncoding.TranscodingJobType.Hls;
 
     private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IUserManager _userManager;
     private readonly IDlnaManager _dlnaManager;
     private readonly IMediaSourceManager _mediaSourceManager;
@@ -64,6 +65,7 @@ public class DynamicHlsController : BaseJellyfinApiController
     /// Initializes a new instance of the <see cref="DynamicHlsController"/> class.
     /// </summary>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
@@ -78,6 +80,7 @@ public class DynamicHlsController : BaseJellyfinApiController
     /// <param name="dynamicHlsPlaylistGenerator">Instance of <see cref="IDynamicHlsPlaylistGenerator"/>.</param>
     public DynamicHlsController(
         ILibraryManager libraryManager,
+        IItemService itemService,
         IUserManager userManager,
         IDlnaManager dlnaManager,
         IMediaSourceManager mediaSourceManager,
@@ -92,6 +95,7 @@ public class DynamicHlsController : BaseJellyfinApiController
         IDynamicHlsPlaylistGenerator dynamicHlsPlaylistGenerator)
     {
         _libraryManager = libraryManager;
+        _itemService = itemService;
         _userManager = userManager;
         _dlnaManager = dlnaManager;
         _mediaSourceManager = mediaSourceManager;
@@ -288,7 +292,7 @@ public class DynamicHlsController : BaseJellyfinApiController
                 HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,
@@ -1393,7 +1397,7 @@ public class DynamicHlsController : BaseJellyfinApiController
                 HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,
@@ -1433,7 +1437,7 @@ public class DynamicHlsController : BaseJellyfinApiController
                 HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,

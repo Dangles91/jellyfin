@@ -64,6 +64,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
         private readonly IProviderManager _providerManager;
         private readonly IMediaEncoder _mediaEncoder;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
         private readonly IMediaSourceManager _mediaSourceManager;
         private readonly IStreamHelper _streamHelper;
 
@@ -90,7 +91,8 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             ILibraryMonitor libraryMonitor,
             IProviderManager providerManager,
             IMediaEncoder mediaEncoder,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             Current = this;
 
@@ -104,6 +106,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             _providerManager = providerManager;
             _mediaEncoder = mediaEncoder;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
             _liveTvManager = (LiveTvManager)liveTvManager;
             _mediaSourceManager = mediaSourceManager;
             _streamHelper = streamHelper;
@@ -1440,7 +1443,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
 
             while (item is null && !string.IsNullOrEmpty(path))
             {
-                item = _itemService.FindItemByPath(path, null);
+                item = _itemQueryService.FindItemByPath(path, null);
 
                 path = Path.GetDirectoryName(path);
             }
@@ -1504,7 +1507,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
 
                 DeleteLibraryItemsForTimers(timersToDelete);
 
-                if (_itemService.FindItemByPath(seriesPath, true) is not Folder librarySeries)
+                if (_itemQueryService.FindItemByPath(seriesPath, true) is not Folder librarySeries)
                 {
                     return;
                 }
@@ -1567,7 +1570,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
 
         private void DeleteLibraryItemForTimer(TimerInfo timer)
         {
-            var libraryItem = _itemService.FindItemByPath(timer.RecordingPath, false);
+            var libraryItem = _itemQueryService.FindItemByPath(timer.RecordingPath, false);
 
             if (libraryItem is not null)
             {
@@ -1772,7 +1775,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
         {
             try
             {
-                var program = string.IsNullOrWhiteSpace(timer.ProgramId) ? null : _itemService.GetItemList(new InternalItemsQuery
+                var program = string.IsNullOrWhiteSpace(timer.ProgramId) ? null : _itemQueryService.GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.LiveTvProgram },
                     Limit = 1,
@@ -2027,7 +2030,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                         await writer.WriteElementStringAsync(null, "genre", null, genre).ConfigureAwait(false);
                     }
 
-                    var people = item.Id.Equals(default) ? new List<PersonInfo>() : _libraryManager.GetPeople(item);
+                    var people = item.Id.Equals(default) ? new List<PersonInfo>() : _itemService.GetPeople(item);
 
                     var directors = people
                         .Where(i => i.IsType(PersonKind.Director))
@@ -2129,7 +2132,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                 DtoOptions = new DtoOptions()
             };
 
-            return _itemService.GetItemList(query).Cast<LiveTvProgram>().FirstOrDefault();
+            return _itemQueryService.GetItemList(query).Cast<LiveTvProgram>().FirstOrDefault();
         }
 
         private LiveTvProgram GetProgramInfoFromCache(TimerInfo timer)
@@ -2157,7 +2160,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                 query.ChannelIds = new[] { _liveTvManager.GetInternalChannelId(Name, channelId) };
             }
 
-            return _itemService.GetItemList(query).Cast<LiveTvProgram>().FirstOrDefault();
+            return _itemQueryService.GetItemList(query).Cast<LiveTvProgram>().FirstOrDefault();
         }
 
         private LiveTvOptions GetConfiguration()
@@ -2350,7 +2353,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
 
             var tempChannelCache = new Dictionary<Guid, LiveTvChannel>();
 
-            return _itemService.GetItemList(query).Cast<LiveTvProgram>().Select(i => CreateTimer(i, seriesTimer, tempChannelCache));
+            return _itemQueryService.GetItemList(query).Cast<LiveTvProgram>().Select(i => CreateTimer(i, seriesTimer, tempChannelCache));
         }
 
         private TimerInfo CreateTimer(LiveTvProgram parent, SeriesTimerInfo seriesTimer, Dictionary<Guid, LiveTvChannel> tempChannelCache)
@@ -2361,7 +2364,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             {
                 if (!tempChannelCache.TryGetValue(parent.ChannelId, out LiveTvChannel channel))
                 {
-                    channel = _itemService.GetItemList(
+                    channel = _itemQueryService.GetItemList(
                         new InternalItemsQuery
                         {
                             IncludeItemTypes = new[] { BaseItemKind.LiveTvChannel },
@@ -2420,7 +2423,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             {
                 if (!tempChannelCache.TryGetValue(programInfo.ChannelId, out LiveTvChannel channel))
                 {
-                    channel = _itemService.GetItemList(
+                    channel = _itemQueryService.GetItemList(
                         new InternalItemsQuery
                         {
                             IncludeItemTypes = new[] { BaseItemKind.LiveTvChannel },
@@ -2485,7 +2488,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
         {
             if ((program.EpisodeNumber.HasValue && program.SeasonNumber.HasValue) || !string.IsNullOrWhiteSpace(program.EpisodeTitle))
             {
-                var seriesIds = _itemService.GetItemIds(
+                var seriesIds = _itemQueryService.GetItemIds(
                     new InternalItemsQuery
                     {
                         IncludeItemTypes = new[] { BaseItemKind.Series },
@@ -2499,7 +2502,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
 
                 if (program.EpisodeNumber.HasValue && program.SeasonNumber.HasValue)
                 {
-                    var result = _itemService.GetItemIds(new InternalItemsQuery
+                    var result = _itemQueryService.GetItemIds(new InternalItemsQuery
                     {
                         IncludeItemTypes = new[] { BaseItemKind.Episode },
                         ParentIndexNumber = program.SeasonNumber.Value,

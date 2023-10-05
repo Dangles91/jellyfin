@@ -27,8 +27,8 @@ public class InstantMixController : BaseJellyfinApiController
 {
     private readonly IUserManager _userManager;
     private readonly IDtoService _dtoService;
-    private readonly ILibraryManager _libraryManager;
     private readonly IMusicManager _musicManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InstantMixController"/> class.
@@ -36,17 +36,17 @@ public class InstantMixController : BaseJellyfinApiController
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="musicManager">Instance of the <see cref="IMusicManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public InstantMixController(
         IUserManager userManager,
         IDtoService dtoService,
         IMusicManager musicManager,
-        ILibraryManager libraryManager)
+        IItemService itemService)
     {
         _userManager = userManager;
         _dtoService = dtoService;
         _musicManager = musicManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null
@@ -111,7 +111,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var album = _libraryManager.GetItemById(id);
+        var album = _itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null
@@ -148,7 +148,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var playlist = (Playlist)_libraryManager.GetItemById(id);
+        var playlist = (Playlist)_itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null
@@ -221,7 +221,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null
@@ -258,7 +258,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null
@@ -332,7 +332,7 @@ public class InstantMixController : BaseJellyfinApiController
         [FromQuery] int? imageTypeLimit,
         [FromQuery, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] ImageType[] enableImageTypes)
     {
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
         userId = RequestHelpers.GetUserId(User, userId);
         var user = userId.Value.Equals(default)
             ? null

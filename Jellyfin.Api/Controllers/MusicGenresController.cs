@@ -27,7 +27,7 @@ public class MusicGenresController : BaseJellyfinApiController
 {
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
-    private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
     private readonly IUserManager _userManager;
 
     /// <summary>
@@ -36,17 +36,17 @@ public class MusicGenresController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of <see cref="IDtoService"/> interface.</param>
-    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of <see cref="IItemQueryService"/> interface.</param>
     public MusicGenresController(
         ILibraryManager libraryManager,
         IUserManager userManager,
         IDtoService dtoService,
-        IItemService itemService)
+        IItemQueryService itemQueryService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _dtoService = dtoService;
-        _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public class MusicGenresController : BaseJellyfinApiController
             }
         }
 
-        var result = _itemService.GetMusicGenres(query);
+        var result = _itemQueryService.GetMusicGenres(query);
 
         var shouldIncludeItemTypes = includeItemTypes.Length != 0;
         return RequestHelpers.CreateQueryResult(result, dtoOptions, _dtoService, shouldIncludeItemTypes, user);
@@ -181,21 +181,21 @@ public class MusicGenresController : BaseJellyfinApiController
     private T? GetItemFromSlugName<T>(string name, DtoOptions dtoOptions, BaseItemKind baseItemKind)
         where T : BaseItem, new()
     {
-        var result = _itemService.GetItemList(new InternalItemsQuery
+        var result = _itemQueryService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '&'),
             IncludeItemTypes = new[] { baseItemKind },
             DtoOptions = dtoOptions
         }).OfType<T>().FirstOrDefault();
 
-        result ??= _itemService.GetItemList(new InternalItemsQuery
+        result ??= _itemQueryService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '/'),
             IncludeItemTypes = new[] { baseItemKind },
             DtoOptions = dtoOptions
         }).OfType<T>().FirstOrDefault();
 
-        result ??= _itemService.GetItemList(new InternalItemsQuery
+        result ??= _itemQueryService.GetItemList(new InternalItemsQuery
         {
             Name = name.Replace(BaseItem.SlugChar, '?'),
             IncludeItemTypes = new[] { baseItemKind },

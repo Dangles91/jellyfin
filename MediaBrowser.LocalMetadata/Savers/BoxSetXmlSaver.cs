@@ -21,9 +21,15 @@ namespace MediaBrowser.LocalMetadata.Savers
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="configurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        /// <param name="itemService">Instance of the <see cref="ILogger{IItemService}"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{BoxSetXmlSaver}"/> interface.</param>
-        public BoxSetXmlSaver(IFileSystem fileSystem, IServerConfigurationManager configurationManager, ILibraryManager libraryManager, ILogger<BoxSetXmlSaver> logger)
-            : base(fileSystem, configurationManager, libraryManager, logger)
+        public BoxSetXmlSaver(
+            IFileSystem fileSystem,
+            IServerConfigurationManager configurationManager,
+            ILibraryManager libraryManager,
+            IItemService itemService,
+            ILogger<BoxSetXmlSaver> logger)
+            : base(fileSystem, configurationManager, libraryManager, itemService, logger)
         {
         }
 

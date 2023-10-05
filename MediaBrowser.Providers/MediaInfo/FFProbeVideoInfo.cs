@@ -40,6 +40,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly ISubtitleManager _subtitleManager;
         private readonly IChapterManager _chapterManager;
         private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
         private readonly AudioResolver _audioResolver;
         private readonly SubtitleResolver _subtitleResolver;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
@@ -57,6 +58,7 @@ namespace MediaBrowser.Providers.MediaInfo
             ISubtitleManager subtitleManager,
             IChapterManager chapterManager,
             ILibraryManager libraryManager,
+            IItemService itemService,
             AudioResolver audioResolver,
             SubtitleResolver subtitleResolver,
             ILibraryOptionsManager libraryOptionsManager)
@@ -72,6 +74,7 @@ namespace MediaBrowser.Providers.MediaInfo
             _subtitleManager = subtitleManager;
             _chapterManager = chapterManager;
             _libraryManager = libraryManager;
+            _itemService = itemService;
             _audioResolver = audioResolver;
             _subtitleResolver = subtitleResolver;
             _libraryOptionsManager = libraryOptionsManager;
@@ -514,7 +517,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 return;
             }
 
-            if (options.ReplaceAllMetadata || _libraryManager.GetPeople(video).Count == 0)
+            if (options.ReplaceAllMetadata || _itemService.GetPeople(video).Count == 0)
             {
                 var people = new List<PersonInfo>();
 

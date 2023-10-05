@@ -66,7 +66,7 @@ namespace MediaBrowser.Controller.Entities
         {
             query.PersonIds = new[] { Id };
 
-            return ItemService.GetItemList(query);
+            return ItemQueryService.GetItemList(query);
         }
 
         public override bool CanDelete()

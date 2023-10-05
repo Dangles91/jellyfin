@@ -35,6 +35,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     private readonly IFileSystem _fileSystem;
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IItemContentTypeProvider _itemContentTypeProvider;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemUpdateController"/> class.
@@ -45,13 +46,15 @@ public class ItemUpdateController : BaseJellyfinApiController
     /// <param name="localizationManager">Instance of the <see cref="ILocalizationManager"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public ItemUpdateController(
         IFileSystem fileSystem,
         ILibraryManager libraryManager,
         IProviderManager providerManager,
         ILocalizationManager localizationManager,
         IServerConfigurationManager serverConfigurationManager,
-        IItemContentTypeProvider itemContentTypeProvider)
+        IItemContentTypeProvider itemContentTypeProvider,
+        IItemService itemService)
     {
         _libraryManager = libraryManager;
         _providerManager = providerManager;
@@ -59,6 +62,7 @@ public class ItemUpdateController : BaseJellyfinApiController
         _fileSystem = fileSystem;
         _serverConfigurationManager = serverConfigurationManager;
         _itemContentTypeProvider = itemContentTypeProvider;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -74,7 +78,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateItem([FromRoute, Required] Guid itemId, [FromBody, Required] BaseItemDto request)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -147,7 +151,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<MetadataEditorInfo> GetMetadataEditorInfo([FromRoute, Required] Guid itemId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
 
         var info = new MetadataEditorInfo
         {
@@ -201,7 +205,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult UpdateItemContentType([FromRoute, Required] Guid itemId, [FromQuery] string? contentType)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();

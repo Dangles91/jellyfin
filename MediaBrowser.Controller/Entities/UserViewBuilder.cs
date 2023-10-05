@@ -29,7 +29,7 @@ namespace MediaBrowser.Controller.Entities
         private readonly IUserDataManager _userDataManager;
         private readonly ITVSeriesManager _tvSeriesManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         public UserViewBuilder(
             IUserViewManager userViewManager,
@@ -38,7 +38,8 @@ namespace MediaBrowser.Controller.Entities
             IUserDataManager userDataManager,
             ITVSeriesManager tvSeriesManager,
             ILibraryRootFolderManager libraryRootFolderManager,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _userViewManager = userViewManager;
             _libraryManager = libraryManager;
@@ -46,7 +47,7 @@ namespace MediaBrowser.Controller.Entities
             _userDataManager = userDataManager;
             _tvSeriesManager = tvSeriesManager;
             _libraryRootFolderManager = libraryRootFolderManager;
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         public QueryResult<BaseItem> GetUserItems(Folder queryParent, Folder displayParent, string viewType, InternalItemsQuery query)
@@ -172,7 +173,7 @@ namespace MediaBrowser.Controller.Entities
             query.IsFavorite = true;
             query.IncludeItemTypes = new[] { BaseItemKind.Movie };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetFavoriteSeries(Folder parent, User user, InternalItemsQuery query)
@@ -183,7 +184,7 @@ namespace MediaBrowser.Controller.Entities
             query.IsFavorite = true;
             query.IncludeItemTypes = new[] { BaseItemKind.Series };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetFavoriteEpisodes(Folder parent, User user, InternalItemsQuery query)
@@ -194,7 +195,7 @@ namespace MediaBrowser.Controller.Entities
             query.IsFavorite = true;
             query.IncludeItemTypes = new[] { BaseItemKind.Episode };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetMovieMovies(Folder parent, User user, InternalItemsQuery query)
@@ -205,7 +206,7 @@ namespace MediaBrowser.Controller.Entities
 
             query.IncludeItemTypes = new[] { BaseItemKind.Movie };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetMovieCollections(User user, InternalItemsQuery query)
@@ -215,7 +216,7 @@ namespace MediaBrowser.Controller.Entities
             query.SetUser(user);
             query.Recursive = true;
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetMovieLatest(Folder parent, User user, InternalItemsQuery query)
@@ -227,7 +228,7 @@ namespace MediaBrowser.Controller.Entities
             query.Limit = GetSpecialItemsLimit();
             query.IncludeItemTypes = new[] { BaseItemKind.Movie };
 
-            return ConvertToResult(_itemService.GetItemList(query));
+            return ConvertToResult(_itemQueryService.GetItemList(query));
         }
 
         private QueryResult<BaseItem> GetMovieResume(Folder parent, User user, InternalItemsQuery query)
@@ -240,7 +241,7 @@ namespace MediaBrowser.Controller.Entities
             query.Limit = GetSpecialItemsLimit();
             query.IncludeItemTypes = new[] { BaseItemKind.Movie };
 
-            return ConvertToResult(_itemService.GetItemList(query));
+            return ConvertToResult(_itemQueryService.GetItemList(query));
         }
 
         private QueryResult<BaseItem> ConvertToResult(List<BaseItem> items)
@@ -285,7 +286,7 @@ namespace MediaBrowser.Controller.Entities
 
             query.IncludeItemTypes = new[] { BaseItemKind.Movie };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetTvView(Folder parent, User user, InternalItemsQuery query)
@@ -332,7 +333,7 @@ namespace MediaBrowser.Controller.Entities
             query.IncludeItemTypes = new[] { BaseItemKind.Episode };
             query.IsVirtualItem = false;
 
-            return ConvertToResult(_itemService.GetItemList(query));
+            return ConvertToResult(_itemQueryService.GetItemList(query));
         }
 
         private QueryResult<BaseItem> GetTvNextUp(Folder parent, InternalItemsQuery query)
@@ -362,7 +363,7 @@ namespace MediaBrowser.Controller.Entities
             query.Limit = GetSpecialItemsLimit();
             query.IncludeItemTypes = new[] { BaseItemKind.Episode };
 
-            return ConvertToResult(_itemService.GetItemList(query));
+            return ConvertToResult(_itemQueryService.GetItemList(query));
         }
 
         private QueryResult<BaseItem> GetTvSeries(Folder parent, User user, InternalItemsQuery query)
@@ -373,7 +374,7 @@ namespace MediaBrowser.Controller.Entities
 
             query.IncludeItemTypes = new[] { BaseItemKind.Series };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetTvGenres(Folder parent, User user, InternalItemsQuery query)
@@ -413,7 +414,7 @@ namespace MediaBrowser.Controller.Entities
 
             query.IncludeItemTypes = new[] { BaseItemKind.Series };
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private QueryResult<BaseItem> GetResult<T>(

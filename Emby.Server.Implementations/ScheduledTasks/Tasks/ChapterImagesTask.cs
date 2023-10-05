@@ -31,6 +31,7 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
         private readonly IFileSystem _fileSystem;
         private readonly ILocalizationManager _localization;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChapterImagesTask" /> class.
@@ -41,13 +42,15 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="localization">The localization manager.</param>
         /// <param name="itemService">The item service.</param>
+        /// <param name="itemQueryService">The item query service.</param>
         public ChapterImagesTask(
             ILogger<ChapterImagesTask> logger,
             IApplicationPaths appPaths,
             IEncodingManager encodingManager,
             IFileSystem fileSystem,
             ILocalizationManager localization,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _logger = logger;
             _appPaths = appPaths;
@@ -55,6 +58,7 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
             _fileSystem = fileSystem;
             _localization = localization;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <inheritdoc />
@@ -86,7 +90,7 @@ namespace Emby.Server.Implementations.ScheduledTasks.Tasks
         /// <inheritdoc />
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            var videos = _itemService.GetItemList(new InternalItemsQuery
+            var videos = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 MediaTypes = new[] { MediaType.Video },
                 IsFolder = false,

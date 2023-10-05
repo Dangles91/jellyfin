@@ -321,7 +321,7 @@ namespace Emby.Server.Implementations.Data
         /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
         /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
         /// <param name="configuration">Instance of the <see cref="IConfiguration"/> interface.</param>
-        /// <param name="fileSystem"></param>
+        /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <exception cref="ArgumentNullException">config is null.</exception>
         public SqliteItemRepository(
             IServerConfigurationManager config,

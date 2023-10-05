@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -33,12 +33,12 @@ namespace Jellyfin.Api.Helpers;
 public class MediaInfoHelper
 {
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly ILogger<MediaInfoHelper> _logger;
     private readonly INetworkManager _networkManager;
+    private readonly IItemService _itemService;
     private readonly IDeviceManager _deviceManager;
 
     /// <summary>
@@ -51,6 +51,7 @@ public class MediaInfoHelper
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{MediaInfoHelper}"/> interface.</param>
     /// <param name="networkManager">Instance of the <see cref="INetworkManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
     public MediaInfoHelper(
         IUserManager userManager,
@@ -60,15 +61,16 @@ public class MediaInfoHelper
         IServerConfigurationManager serverConfigurationManager,
         ILogger<MediaInfoHelper> logger,
         INetworkManager networkManager,
+        IItemService itemService,
         IDeviceManager deviceManager)
     {
         _userManager = userManager;
-        _libraryManager = libraryManager;
         _mediaSourceManager = mediaSourceManager;
         _mediaEncoder = mediaEncoder;
         _serverConfigurationManager = serverConfigurationManager;
         _logger = logger;
         _networkManager = networkManager;
+        _itemService = itemService;
         _deviceManager = deviceManager;
     }
 
@@ -89,7 +91,7 @@ public class MediaInfoHelper
         var user = userId is null || userId.Value.Equals(default)
             ? null
             : _userManager.GetUserById(userId.Value);
-        var item = _libraryManager.GetItemById(id);
+        var item = _itemService.GetItemById(id);
         var result = new PlaybackInfoResponse();
 
         MediaSourceInfo[] mediaSources;
@@ -401,7 +403,7 @@ public class MediaInfoHelper
 
         if (profile is not null)
         {
-            var item = _libraryManager.GetItemById(request.ItemId);
+            var item = _itemService.GetItemById(request.ItemId);
 
             SetDeviceSpecificData(
                 item,

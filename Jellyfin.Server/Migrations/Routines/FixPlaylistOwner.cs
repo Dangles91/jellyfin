@@ -18,16 +18,16 @@ internal class FixPlaylistOwner : IMigrationRoutine
 {
     private readonly ILogger<RemoveDuplicateExtras> _logger;
     private readonly IPlaylistManager _playlistManager;
-    private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     public FixPlaylistOwner(
         ILogger<RemoveDuplicateExtras> logger,
         IPlaylistManager playlistManager,
-        IItemService itemService)
+        IItemQueryService itemQueryService)
     {
         _logger = logger;
         _playlistManager = playlistManager;
-        _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <inheritdoc/>
@@ -42,7 +42,7 @@ internal class FixPlaylistOwner : IMigrationRoutine
     /// <inheritdoc/>
     public void Perform()
     {
-        var playlists = _itemService.GetItemList(new InternalItemsQuery
+        var playlists = _itemQueryService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Playlist }
         })

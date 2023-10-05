@@ -221,7 +221,7 @@ public class LiveTvController : BaseJellyfinApiController
             : _userManager.GetUserById(userId.Value);
         var item = channelId.Equals(default)
             ? _libraryManager.GetUserRootFolder()
-            : _libraryManager.GetItemById(channelId);
+            : _itemService.GetItemById(channelId);
 
         var dtoOptions = new DtoOptions()
             .AddClientFields(User);
@@ -415,7 +415,7 @@ public class LiveTvController : BaseJellyfinApiController
         var user = userId.Value.Equals(default)
             ? null
             : _userManager.GetUserById(userId.Value);
-        var item = recordingId.Equals(default) ? _libraryManager.GetUserRootFolder() : _libraryManager.GetItemById(recordingId);
+        var item = recordingId.Equals(default) ? _libraryManager.GetUserRootFolder() : _itemService.GetItemById(recordingId);
 
         var dtoOptions = new DtoOptions()
             .AddClientFields(User);
@@ -600,7 +600,7 @@ public class LiveTvController : BaseJellyfinApiController
         {
             query.IsSeries = true;
 
-            if (_libraryManager.GetItemById(librarySeriesId.Value) is Series series)
+            if (_itemService.GetItemById(librarySeriesId.Value) is Series series)
             {
                 query.Name = series.Name;
             }
@@ -654,7 +654,7 @@ public class LiveTvController : BaseJellyfinApiController
         {
             query.IsSeries = true;
 
-            if (_libraryManager.GetItemById(body.LibrarySeriesId) is Series series)
+            if (_itemService.GetItemById(body.LibrarySeriesId) is Series series)
             {
                 query.Name = series.Name;
             }
@@ -768,7 +768,7 @@ public class LiveTvController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult DeleteRecording([FromRoute, Required] Guid recordingId)
     {
-        var item = _libraryManager.GetItemById(recordingId);
+        var item = _itemService.GetItemById(recordingId);
         if (item is null)
         {
             return NotFound();

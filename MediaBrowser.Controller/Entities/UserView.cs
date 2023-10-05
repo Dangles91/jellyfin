@@ -103,7 +103,7 @@ namespace MediaBrowser.Controller.Entities
                 parent = LibraryManager.GetItemById(ParentId) as Folder ?? parent;
             }
 
-            return new UserViewBuilder(UserViewManager, LibraryManager, Logger, UserDataManager, TVSeriesManager, LibraryRootFolderManager, ItemService)
+            return new UserViewBuilder(UserViewManager, LibraryManager, Logger, UserDataManager, TVSeriesManager, LibraryRootFolderManager, ItemService, ItemQueryService)
                 .GetUserItems(parent, this, CollectionType, query);
         }
 

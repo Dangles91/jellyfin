@@ -30,26 +30,26 @@ namespace Jellyfin.Api.Controllers;
 public class SearchController : BaseJellyfinApiController
 {
     private readonly ISearchEngine _searchEngine;
-    private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
+    private readonly IItemService _itemService;
     private readonly IImageProcessor _imageProcessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SearchController"/> class.
     /// </summary>
     /// <param name="searchEngine">Instance of <see cref="ISearchEngine"/> interface.</param>
-    /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of <see cref="IDtoService"/> interface.</param>
+    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     /// <param name="imageProcessor">Instance of <see cref="IImageProcessor"/> interface.</param>
     public SearchController(
         ISearchEngine searchEngine,
-        ILibraryManager libraryManager,
         IDtoService dtoService,
+        IItemService itemService,
         IImageProcessor imageProcessor)
     {
         _searchEngine = searchEngine;
-        _libraryManager = libraryManager;
         _dtoService = dtoService;
+        _itemService = itemService;
         _imageProcessor = imageProcessor;
     }
 
@@ -211,7 +211,7 @@ public class SearchController : BaseJellyfinApiController
 
         if (!item.ChannelId.Equals(default))
         {
-            var channel = _libraryManager.GetItemById(item.ChannelId);
+            var channel = _itemService.GetItemById(item.ChannelId);
             result.ChannelName = channel?.Name;
         }
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
+using Jellyfin.Extensions;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Entities;
@@ -24,19 +25,20 @@ namespace Emby.Server.Implementations.Collections
     /// </summary>
     public class CollectionManager : ICollectionManager
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly IFileSystem _fileSystem;
         private readonly ILibraryMonitor _iLibraryMonitor;
         private readonly ILogger<CollectionManager> _logger;
         private readonly IProviderManager _providerManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IItemService _itemService;
         private readonly ILocalizationManager _localizationManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IApplicationPaths _appPaths;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CollectionManager"/> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
+        /// <param name="virtualFolderManager">ok.</param>
         /// <param name="appPaths">The application paths.</param>
         /// <param name="localizationManager">The localization manager.</param>
         /// <param name="fileSystem">The filesystem.</param>
@@ -44,23 +46,26 @@ namespace Emby.Server.Implementations.Collections
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="providerManager">The provider manager.</param>
         /// <param name="libraryRootFolderManager">The root folder manager.</param>
+        /// <param name="itemService">The item service.</param>
         public CollectionManager(
-            ILibraryManager libraryManager,
+            IVirtualFolderManager virtualFolderManager,
             IApplicationPaths appPaths,
             ILocalizationManager localizationManager,
             IFileSystem fileSystem,
             ILibraryMonitor iLibraryMonitor,
             ILoggerFactory loggerFactory,
             IProviderManager providerManager,
-            ILibraryRootFolderManager libraryRootFolderManager)
+            ILibraryRootFolderManager libraryRootFolderManager,
+            IItemService itemService)
         {
-            _libraryManager = libraryManager;
             _fileSystem = fileSystem;
             _iLibraryMonitor = iLibraryMonitor;
             _logger = loggerFactory.CreateLogger<CollectionManager>();
             _providerManager = providerManager;
             _libraryRootFolderManager = libraryRootFolderManager;
+            _itemService = itemService;
             _localizationManager = localizationManager;
+            _virtualFolderManager = virtualFolderManager;
             _appPaths = appPaths;
         }
 
@@ -106,7 +111,7 @@ namespace Emby.Server.Implementations.Collections
 
             var name = _localizationManager.GetLocalizedString("Collections");
 
-            await _libraryManager.AddVirtualFolder(name, CollectionTypeOptions.BoxSets, libraryOptions, true).ConfigureAwait(false);
+            await _virtualFolderManager.AddVirtualFolder(name, CollectionTypeOptions.BoxSets, libraryOptions, true).ConfigureAwait(false);
 
             return FindFolders(path).First();
         }
@@ -206,7 +211,7 @@ namespace Emby.Server.Implementations.Collections
 
         private async Task AddToCollectionAsync(Guid collectionId, IEnumerable<Guid> ids, bool fireEvent, MetadataRefreshOptions refreshOptions)
         {
-            if (_libraryManager.GetItemById(collectionId) is not BoxSet collection)
+            if (_itemService.GetItemById(collectionId) is not BoxSet collection)
             {
                 throw new ArgumentException("No collection exists with the supplied Id");
             }
@@ -218,7 +223,7 @@ namespace Emby.Server.Implementations.Collections
 
             foreach (var id in ids)
             {
-                var item = _libraryManager.GetItemById(id);
+                var item = _itemService.GetItemById(id);
 
                 if (item is null)
                 {
@@ -262,7 +267,7 @@ namespace Emby.Server.Implementations.Collections
         /// <inheritdoc />
         public async Task RemoveFromCollectionAsync(Guid collectionId, IEnumerable<Guid> itemIds)
         {
-            if (_libraryManager.GetItemById(collectionId) is not BoxSet collection)
+            if (_itemService.GetItemById(collectionId) is not BoxSet collection)
             {
                 throw new ArgumentException("No collection exists with the supplied Id");
             }
@@ -272,7 +277,7 @@ namespace Emby.Server.Implementations.Collections
 
             foreach (var guidId in itemIds)
             {
-                var childItem = _libraryManager.GetItemById(guidId);
+                var childItem = _itemService.GetItemById(guidId);
 
                 var child = collection.LinkedChildren.FirstOrDefault(i => (i.ItemId.HasValue && i.ItemId.Value.Equals(guidId)) || (childItem is not null && string.Equals(childItem.Path, i.Path, StringComparison.OrdinalIgnoreCase)));
 
@@ -305,6 +310,57 @@ namespace Emby.Server.Implementations.Collections
                 RefreshPriority.High);
 
             ItemsRemovedFromCollection?.Invoke(this, new CollectionModifiedEventArgs(collection, itemList));
+        }
+
+        /// <inheritdoc/>
+        public List<Folder> GetCollectionFolders(BaseItem item)
+        {
+            return GetCollectionFolders(item, _libraryRootFolderManager.GetUserRootFolder().Children.OfType<Folder>());
+        }
+
+        /// <inheritdoc/>
+        public List<Folder> GetCollectionFolders(BaseItem item, IEnumerable<Folder> allUserRootChildren)
+        {
+            while (item is not null)
+            {
+                var parent = item.GetParent();
+
+                if (parent is AggregateFolder)
+                {
+                    break;
+                }
+
+                if (parent is null)
+                {
+                    var owner = item.GetOwner();
+
+                    if (owner is null)
+                    {
+                        break;
+                    }
+
+                    item = owner;
+                }
+                else
+                {
+                    item = parent;
+                }
+            }
+
+            if (item is null)
+            {
+                return new List<Folder>();
+            }
+
+            return GetCollectionFoldersInternal(item, allUserRootChildren);
+        }
+
+        private static List<Folder> GetCollectionFoldersInternal(BaseItem item, IEnumerable<Folder> allUserRootChildren)
+        {
+            return allUserRootChildren
+                .Where(i => string.Equals(i.Path, item.Path, StringComparison.OrdinalIgnoreCase) ||
+                    i.PhysicalLocations.Contains(item.Path.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
         /// <inheritdoc />

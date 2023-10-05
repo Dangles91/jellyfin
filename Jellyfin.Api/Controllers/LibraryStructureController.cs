@@ -31,6 +31,7 @@ public class LibraryStructureController : BaseJellyfinApiController
 {
     private readonly IServerApplicationPaths _appPaths;
     private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly ILibraryMonitor _libraryMonitor;
     private readonly ILibraryOptionsManager _libraryOptionsManager;
 
@@ -39,16 +40,19 @@ public class LibraryStructureController : BaseJellyfinApiController
     /// </summary>
     /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     /// <param name="libraryMonitor">Instance of <see cref="ILibraryMonitor"/> interface.</param>
     /// <param name="libraryOptionsManager">Instance of <see cref="ILibraryOptionsManager"/> interface.</param>
     public LibraryStructureController(
         IServerConfigurationManager serverConfigurationManager,
         ILibraryManager libraryManager,
+        IItemService itemService,
         ILibraryMonitor libraryMonitor,
         ILibraryOptionsManager libraryOptionsManager)
     {
         _appPaths = serverConfigurationManager.ApplicationPaths;
         _libraryManager = libraryManager;
+        _itemService = itemService;
         _libraryMonitor = libraryMonitor;
         _libraryOptionsManager = libraryOptionsManager;
     }
@@ -322,7 +326,7 @@ public class LibraryStructureController : BaseJellyfinApiController
     public ActionResult UpdateLibraryOptions(
         [FromBody] UpdateLibraryOptionsDto request)
     {
-        var collectionFolder = (CollectionFolder)_libraryManager.GetItemById(request.Id);
+        var collectionFolder = (CollectionFolder)_itemService.GetItemById(request.Id);
 
         _libraryOptionsManager.UpdateLibraryOptions(collectionFolder, request.LibraryOptions);
         return NoContent();

@@ -14,15 +14,18 @@ namespace Emby.Server.Implementations.Data
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger<CleanDatabaseScheduledTask> _logger;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         public CleanDatabaseScheduledTask(
             ILibraryManager libraryManager,
             ILogger<CleanDatabaseScheduledTask> logger,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _libraryManager = libraryManager;
             _logger = logger;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         public Task Run(IProgress<double> progress, CancellationToken cancellationToken)
@@ -33,7 +36,7 @@ namespace Emby.Server.Implementations.Data
 
         private void CleanDeadItems(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            var itemIds = _itemService.GetItemIds(new InternalItemsQuery
+            var itemIds = _itemQueryService.GetItemIds(new InternalItemsQuery
             {
                 HasDeadParentId = true
             });
@@ -47,7 +50,7 @@ namespace Emby.Server.Implementations.Data
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var item = _libraryManager.GetItemById(itemId);
+                var item = _itemService.GetItemById(itemId);
 
                 if (item is not null)
                 {

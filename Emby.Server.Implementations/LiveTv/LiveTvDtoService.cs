@@ -32,7 +32,8 @@ namespace Emby.Server.Implementations.LiveTv
         private readonly IImageProcessor _imageProcessor;
         private readonly IDtoService _dtoService;
         private readonly IApplicationHost _appHost;
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemQueryService _itemQueryService;
+        private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly IItemService _itemService;
 
         public LiveTvDtoService(
@@ -40,14 +41,16 @@ namespace Emby.Server.Implementations.LiveTv
             IImageProcessor imageProcessor,
             ILogger<LiveTvDtoService> logger,
             IApplicationHost appHost,
-            ILibraryManager libraryManager,
+            IItemQueryService itemQueryService,
+            ILibraryItemIdGenerator libraryItemIdGenerator,
             IItemService itemService)
         {
             _dtoService = dtoService;
             _imageProcessor = imageProcessor;
             _logger = logger;
             _appHost = appHost;
-            _libraryManager = libraryManager;
+            _itemQueryService = itemQueryService;
+            _libraryItemIdGenerator = libraryItemIdGenerator;
             _itemService = itemService;
         }
 
@@ -162,7 +165,7 @@ namespace Emby.Server.Implementations.LiveTv
 
         private void FillImages(BaseItemDto dto, string seriesName, string programSeriesId)
         {
-            var librarySeries = _itemService.GetItemList(new InternalItemsQuery
+            var librarySeries = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Series },
                 Name = seriesName,
@@ -205,7 +208,7 @@ namespace Emby.Server.Implementations.LiveTv
                 }
             }
 
-            var program = _itemService.GetItemList(new InternalItemsQuery
+            var program = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.LiveTvProgram },
                 ExternalSeriesId = programSeriesId,
@@ -256,7 +259,7 @@ namespace Emby.Server.Implementations.LiveTv
 
         private void FillImages(SeriesTimerInfoDto dto, string seriesName, string programSeriesId)
         {
-            var librarySeries = _itemService.GetItemList(new InternalItemsQuery
+            var librarySeries = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Series },
                 Name = seriesName,
@@ -299,7 +302,7 @@ namespace Emby.Server.Implementations.LiveTv
                 }
             }
 
-            var program = _itemService.GetItemList(new InternalItemsQuery
+            var program = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Series },
                 Name = seriesName,
@@ -310,7 +313,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (program is null)
             {
-                program = _itemService.GetItemList(new InternalItemsQuery
+                program = _itemQueryService.GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.LiveTvProgram },
                     ExternalSeriesId = programSeriesId,
@@ -406,7 +409,7 @@ namespace Emby.Server.Implementations.LiveTv
         {
             var name = serviceName + externalId + InternalVersionNumber;
 
-            return _libraryManager.GetNewItemId(name.ToLowerInvariant(), typeof(LiveTvChannel));
+            return _libraryItemIdGenerator.Generate(name.ToLowerInvariant(), typeof(LiveTvChannel));
         }
 
         public string GetInternalTimerId(string externalId)
@@ -427,7 +430,7 @@ namespace Emby.Server.Implementations.LiveTv
         {
             var name = ServiceName + externalId + InternalVersionNumber;
 
-            return _libraryManager.GetNewItemId(name.ToLowerInvariant(), typeof(LiveTvProgram));
+            return _libraryItemIdGenerator.Generate(name.ToLowerInvariant(), typeof(LiveTvProgram));
         }
 
         public async Task<TimerInfo> GetTimerInfo(TimerInfoDto dto, bool isNew, LiveTvManager liveTv, CancellationToken cancellationToken)
@@ -461,7 +464,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (!dto.ChannelId.Equals(default) && string.IsNullOrEmpty(info.ChannelId))
             {
-                var channel = _libraryManager.GetItemById(dto.ChannelId);
+                var channel = _itemService.GetItemById(dto.ChannelId);
 
                 if (channel is not null)
                 {
@@ -471,7 +474,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (!string.IsNullOrEmpty(dto.ProgramId) && string.IsNullOrEmpty(info.ProgramId))
             {
-                var program = _libraryManager.GetItemById(dto.ProgramId);
+                var program = _itemService.GetItemById(new Guid(dto.ProgramId));
 
                 if (program is not null)
                 {
@@ -527,7 +530,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (!dto.ChannelId.Equals(default) && string.IsNullOrEmpty(info.ChannelId))
             {
-                var channel = _libraryManager.GetItemById(dto.ChannelId);
+                var channel = _itemService.GetItemById(dto.ChannelId);
 
                 if (channel is not null)
                 {
@@ -537,7 +540,7 @@ namespace Emby.Server.Implementations.LiveTv
 
             if (!string.IsNullOrEmpty(dto.ProgramId) && string.IsNullOrEmpty(info.ProgramId))
             {
-                var program = _libraryManager.GetItemById(dto.ProgramId);
+                var program = _itemService.GetItemById(new Guid(dto.ProgramId));
 
                 if (program is not null)
                 {

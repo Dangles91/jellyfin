@@ -17,26 +17,26 @@ namespace Emby.Server.Implementations.Channels
     {
         private readonly IChannelManager _channelManager;
         private readonly ILogger _logger;
-        private readonly ILibraryManager _libraryManager;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelPostScanTask"/> class.
         /// </summary>
         /// <param name="channelManager">The channel manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="itemService">The item service.</param>
+        /// <param name="itemQueryService">The item query service.</param>
         public ChannelPostScanTask(
             IChannelManager channelManager,
             ILogger logger,
-            ILibraryManager libraryManager,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _channelManager = channelManager;
             _logger = logger;
-            _libraryManager = libraryManager;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Emby.Server.Implementations.Channels
         {
             var installedChannelIds = ((ChannelManager)_channelManager).GetInstalledChannelIds();
 
-            var uninstalledChannels = _itemService.GetItemList(new InternalItemsQuery
+            var uninstalledChannels = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Channel },
                 ExcludeItemIds = installedChannelIds.ToArray()
@@ -76,7 +76,7 @@ namespace Emby.Server.Implementations.Channels
             _logger.LogInformation("Cleaning channel {0} from database", channel.Id);
 
             // Delete all channel items
-            var items = _itemService.GetItemList(new InternalItemsQuery
+            var items = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 ChannelIds = new[] { channel.Id }
             });

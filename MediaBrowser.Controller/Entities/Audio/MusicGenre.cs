@@ -69,7 +69,7 @@ namespace MediaBrowser.Controller.Entities.Audio
             query.GenreIds = new[] { Id };
             query.IncludeItemTypes = new[] { BaseItemKind.MusicVideo, BaseItemKind.Audio, BaseItemKind.MusicAlbum, BaseItemKind.MusicArtist };
 
-            return ItemService.GetItemList(query);
+            return ItemQueryService.GetItemList(query);
         }
 
         public static string GetPath(string name)

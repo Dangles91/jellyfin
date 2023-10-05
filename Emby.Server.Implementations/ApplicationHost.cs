@@ -46,6 +46,7 @@ using Jellyfin.MediaEncoding.Hls.Playlist;
 using Jellyfin.Networking.Configuration;
 using Jellyfin.Networking.Manager;
 using Jellyfin.Server.Implementations;
+using Jellyfin.Server.Implementations.Library;
 using MediaBrowser.Common;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Events;
@@ -142,19 +143,17 @@ namespace Emby.Server.Implementations
         /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/> interface.</param>
         /// <param name="options">Instance of the <see cref="IStartupOptions"/> interface.</param>
         /// <param name="startupConfig">The <see cref="IConfiguration" /> interface.</param>
-        /// <param name="serverApplicationPaths">The server paths.</param>
         protected ApplicationHost(
             IServerApplicationPaths applicationPaths,
             ILoggerFactory loggerFactory,
             IStartupOptions options,
-            IConfiguration startupConfig,
-            IServerApplicationPaths serverApplicationPaths)
+            IConfiguration startupConfig)
         {
             ApplicationPaths = applicationPaths;
             LoggerFactory = loggerFactory;
             _startupOptions = options;
             _startupConfig = startupConfig;
-            _fileSystemManager = new ManagedFileSystem(LoggerFactory.CreateLogger<ManagedFileSystem>(), applicationPaths, serverApplicationPaths);
+            _fileSystemManager = new ManagedFileSystem(LoggerFactory.CreateLogger<ManagedFileSystem>(), applicationPaths);
 
             Logger = LoggerFactory.CreateLogger<ApplicationHost>();
             _deviceId = new DeviceId(ApplicationPaths, LoggerFactory);
@@ -531,6 +530,24 @@ namespace Emby.Server.Implementations
             serviceCollection.AddTransient(provider => new Lazy<IProviderManager>(provider.GetRequiredService<IProviderManager>));
             serviceCollection.AddTransient(provider => new Lazy<IUserViewManager>(provider.GetRequiredService<IUserViewManager>));
             serviceCollection.AddSingleton<ILibraryManager, LibraryManager>();
+            serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
+            serviceCollection.AddSingleton<ILibraryOptionsManager, LibraryOptionsManager>();
+            serviceCollection.AddSingleton<ILibraryItemIdGenerator, Md5LibraryItemIdGenerator>();
+            serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
+            serviceCollection.AddSingleton<ILibraryRootFolderManager, LibraryRootFolderManager>();
+            serviceCollection.AddSingleton<ILibraryOptionsManager, LibraryOptionsManager>();
+            serviceCollection.AddSingleton<IItemResolveArgsFactory, ItemResolveArgsFactory>();
+            serviceCollection.AddSingleton<IResolverIgnoreRulesProvider, ResolverIgnoreRulesProvider>();
+
+            serviceCollection.AddSingleton<IItemPathResolver, ItemPathResolver>();
+            serviceCollection.AddSingleton<IItemQueryBuilder, ItemQueryBuilder>();
+            serviceCollection.AddSingleton<IItemQueryService, ItemQueryService>();
+            serviceCollection.AddSingleton<IItemService, ItemService>();
+            serviceCollection.AddSingleton<IItemContentTypeProvider, ItemContentTypeProvider>();
+            serviceCollection.AddSingleton<IUserViewBuilder, UserViewBuilder>();
+            serviceCollection.AddSingleton<IVirtualFolderManager, VirtualFolderManager>();
+            serviceCollection.AddSingleton<FileRefresherFactory, FileRefresherFactory>();
+
             serviceCollection.AddSingleton<NamingOptions>();
 
             serviceCollection.AddSingleton<IMusicManager, MusicManager>();
@@ -676,14 +693,17 @@ namespace Emby.Server.Implementations
                 Resolve<ILibraryRootFolderManager>(),
                 Resolve<IItemPathResolver>(),
                 Resolve<ILibraryOptionsManager>(),
-                Resolve<ILibraryCollectionManager>(),
+                Resolve<ICollectionManager>(),
                 Resolve<IItemContentTypeProvider>(),
-                Resolve<IUserViewBuilder>());
+                Resolve<IUserViewBuilder>(),
+                Resolve<IItemQueryService>(),
+                Resolve<ILibraryItemIdGenerator>(),
+                Resolve<IItemResolveArgsFactory>());
 
             Video.LiveTvManager = Resolve<ILiveTvManager>();
             Folder.UserViewManager = Resolve<IUserViewManager>();
             UserView.TVSeriesManager = Resolve<ITVSeriesManager>();
-            UserView.CollectionManager = Resolve<ICollectionManager>();
+            UserView.CollectionManager = Resolve<MediaBrowser.Controller.Collections.ICollectionManager>();
         }
 
         /// <summary>
@@ -713,7 +733,9 @@ namespace Emby.Server.Implementations
                 GetExports<IExternalId>());
 
             Resolve<IItemPathResolver>().AddParts(
-                GetExports<IItemResolver>(),
+                GetExports<IItemResolver>());
+
+            Resolve<IResolverIgnoreRulesProvider>().AddParts(
                 GetExports<IResolverIgnoreRule>());
 
             Resolve<ILiveTvManager>().AddParts(GetExports<ILiveTvService>(), GetExports<ITunerHost>(), GetExports<IListingsProvider>());

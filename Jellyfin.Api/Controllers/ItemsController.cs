@@ -35,6 +35,7 @@ public class ItemsController : BaseJellyfinApiController
     private readonly ILogger<ItemsController> _logger;
     private readonly ISessionManager _sessionManager;
     private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemsController"/> class.
@@ -46,6 +47,7 @@ public class ItemsController : BaseJellyfinApiController
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public ItemsController(
         IUserManager userManager,
         ILibraryManager libraryManager,
@@ -53,7 +55,8 @@ public class ItemsController : BaseJellyfinApiController
         IDtoService dtoService,
         ILogger<ItemsController> logger,
         ISessionManager sessionManager,
-        IItemService itemService)
+        IItemService itemService,
+        IItemQueryService itemQueryService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
@@ -62,6 +65,7 @@ public class ItemsController : BaseJellyfinApiController
         _logger = logger;
         _sessionManager = sessionManager;
         _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -476,7 +480,7 @@ public class ItemsController : BaseJellyfinApiController
             {
                 query.AlbumIds = albums.SelectMany(i =>
                 {
-                    return _itemService.GetItemIds(new InternalItemsQuery { IncludeItemTypes = new[] { BaseItemKind.MusicAlbum }, Name = i, Limit = 1 });
+                    return _itemQueryService.GetItemIds(new InternalItemsQuery { IncludeItemTypes = new[] { BaseItemKind.MusicAlbum }, Name = i, Limit = 1 });
                 }).ToArray();
             }
 
@@ -858,7 +862,7 @@ public class ItemsController : BaseJellyfinApiController
                 .ToArray();
         }
 
-        var itemsResult = _itemService.GetItemsResult(new InternalItemsQuery(user)
+        var itemsResult = _itemQueryService.GetItemsResult(new InternalItemsQuery(user)
         {
             OrderBy = new[] { (ItemSortBy.DatePlayed, SortOrder.Descending) },
             IsResumable = true,

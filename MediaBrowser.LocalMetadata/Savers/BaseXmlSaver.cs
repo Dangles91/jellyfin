@@ -27,13 +27,20 @@ namespace MediaBrowser.LocalMetadata.Savers
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="configurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{BaseXmlSaver}"/> interface.</param>
-        protected BaseXmlSaver(IFileSystem fileSystem, IServerConfigurationManager configurationManager, ILibraryManager libraryManager, ILogger<BaseXmlSaver> logger)
+        protected BaseXmlSaver(
+            IFileSystem fileSystem,
+            IServerConfigurationManager configurationManager,
+            ILibraryManager libraryManager,
+            IItemService itemService,
+            ILogger<BaseXmlSaver> logger)
         {
             FileSystem = fileSystem;
             ConfigurationManager = configurationManager;
             LibraryManager = libraryManager;
             Logger = logger;
+            ItemService = itemService;
         }
 
         /// <summary>
@@ -55,6 +62,11 @@ namespace MediaBrowser.LocalMetadata.Savers
         /// Gets the logger.
         /// </summary>
         protected ILogger<BaseXmlSaver> Logger { get; private set; }
+
+        /// <summary>
+        /// Gets the item service.
+        /// </summary>
+        protected IItemService ItemService { get; private set; }
 
         /// <inheritdoc />
         public string Name => XmlProviderUtils.Name;
@@ -364,7 +376,7 @@ namespace MediaBrowser.LocalMetadata.Savers
                 await writer.WriteEndElementAsync().ConfigureAwait(false);
             }
 
-            var people = LibraryManager.GetPeople(item);
+            var people = ItemService.GetPeople(item);
 
             if (people.Count > 0)
             {

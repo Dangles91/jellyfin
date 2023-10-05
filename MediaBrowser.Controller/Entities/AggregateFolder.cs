@@ -120,10 +120,7 @@ namespace MediaBrowser.Controller.Entities
 
             var path = ContainingFolderPath;
 
-            var args = new ItemResolveArgs(ConfigurationManager.ApplicationPaths, LibraryOptionsManager, ItemPathResolver, ItemContentTypeProvider, FileSystem)
-            {
-                FileInfo = FileSystem.GetDirectoryInfo(path)
-            };
+            var args = ItemResolveArgsFactory.Create(null, FileSystem.GetDirectoryInfo(path), null, null);
 
             // Gather child folder and files
             if (args.IsDirectory)

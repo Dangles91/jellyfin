@@ -15,22 +15,21 @@ namespace Emby.Server.Implementations.IO
     public sealed class FileRefresher : IDisposable
     {
         private readonly ILogger _logger;
-        private readonly IItemService _itemService;
-        private readonly IServerConfigurationManager _configurationManager;
+        private readonly IItemQueryService _itemQueryService;
 
+        private readonly int _timerDelaySeconds;
         private readonly List<string> _affectedPaths = new List<string>();
         private readonly object _timerLock = new object();
         private Timer? _timer;
         private bool _disposed;
 
-        public FileRefresher(string path, IServerConfigurationManager configurationManager, ILogger logger, IItemService itemService)
+        public FileRefresher(string path, int timerDelaySeconds, ILogger logger, IItemQueryService itemQueryService)
         {
             logger.LogDebug("New file refresher created for {0}", path);
             Path = path;
-
-            _configurationManager = configurationManager;
+            _timerDelaySeconds = timerDelaySeconds;
             _logger = logger;
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
             AddPath(path);
         }
 
@@ -76,11 +75,11 @@ namespace Emby.Server.Implementations.IO
 
                 if (_timer is null)
                 {
-                    _timer = new Timer(OnTimerCallback, null, TimeSpan.FromSeconds(_configurationManager.Configuration.LibraryMonitorDelay), TimeSpan.FromMilliseconds(-1));
+                    _timer = new Timer(OnTimerCallback, null, TimeSpan.FromSeconds(_timerDelaySeconds), TimeSpan.FromMilliseconds(-1));
                 }
                 else
                 {
-                    _timer.Change(TimeSpan.FromSeconds(_configurationManager.Configuration.LibraryMonitorDelay), TimeSpan.FromMilliseconds(-1));
+                    _timer.Change(TimeSpan.FromSeconds(_timerDelaySeconds), TimeSpan.FromMilliseconds(-1));
                 }
             }
         }
@@ -166,7 +165,7 @@ namespace Emby.Server.Implementations.IO
 
             while (item is null && !string.IsNullOrEmpty(path))
             {
-                item = _itemService.FindItemByPath(path, null);
+                item = _itemQueryService.FindItemByPath(path, null);
 
                 path = System.IO.Path.GetDirectoryName(path) ?? string.Empty;
             }

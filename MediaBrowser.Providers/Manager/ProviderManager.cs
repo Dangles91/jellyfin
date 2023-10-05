@@ -57,6 +57,7 @@ namespace MediaBrowser.Providers.Manager
         private readonly IBaseItemManager _baseItemManager;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
         private readonly ConcurrentDictionary<Guid, double> _activeRefreshes = new();
         private readonly CancellationTokenSource _disposeCancellationTokenSource = new();
         private readonly PriorityQueue<(Guid ItemId, MetadataRefreshOptions RefreshOptions), RefreshPriority> _refreshQueue = new();
@@ -83,6 +84,7 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="baseItemManager">The BaseItem manager.</param>
         /// <param name="libraryOptionsManager">The instance of <see cref="ILibraryOptionsManager"/> interface.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
+        /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> interface.</param>
         public ProviderManager(
             IHttpClientFactory httpClientFactory,
             ISubtitleManager subtitleManager,
@@ -94,7 +96,8 @@ namespace MediaBrowser.Providers.Manager
             ILibraryManager libraryManager,
             IBaseItemManager baseItemManager,
             ILibraryOptionsManager libraryOptionsManager,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -107,6 +110,7 @@ namespace MediaBrowser.Providers.Manager
             _baseItemManager = baseItemManager;
             _libraryOptionsManager = libraryOptionsManager;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <inheritdoc/>
@@ -716,7 +720,7 @@ namespace MediaBrowser.Providers.Manager
 
             if (!searchInfo.ItemId.Equals(default))
             {
-                referenceItem = _libraryManager.GetItemById(searchInfo.ItemId);
+                referenceItem = _itemService.GetItemById(searchInfo.ItemId);
             }
 
             return GetRemoteSearchResults<TItemType, TLookupType>(searchInfo, referenceItem, cancellationToken);
@@ -1044,7 +1048,7 @@ namespace MediaBrowser.Providers.Manager
 
         private async Task RefreshArtist(MusicArtist item, MetadataRefreshOptions options, CancellationToken cancellationToken)
         {
-            var albums = _itemService
+            var albums = _itemQueryService
                 .GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },

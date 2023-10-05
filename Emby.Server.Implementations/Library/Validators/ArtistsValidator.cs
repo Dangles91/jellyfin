@@ -18,27 +18,26 @@ namespace Emby.Server.Implementations.Library.Validators
     public class ArtistsValidator
     {
         /// <summary>
-        /// The library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
-
-        /// <summary>
         /// The logger.
         /// </summary>
         private readonly ILogger<ArtistsValidator> _logger;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ArtistsValidator" /> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="itemService">The item service</param>
-        public ArtistsValidator(ILibraryManager libraryManager, ILogger<ArtistsValidator> logger, IItemService itemService)
+        /// <param name="itemService">The item service.</param>
+        /// <param name="itemQueryService">The item query service.</param>
+        public ArtistsValidator(
+            ILogger<ArtistsValidator> logger,
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
-            _libraryManager = libraryManager;
             _logger = logger;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -80,7 +79,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(percent);
             }
 
-            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.MusicArtist },
                 IsDeadArtist = true,

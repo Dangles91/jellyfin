@@ -15,7 +15,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.Library
 {
-    // TODO: Dangles: eventual circular dependecy between ItemService and this.
+    /// <summary>
+    /// Manage root folers of the library.
+    /// </summary>
     public class LibraryRootFolderManager : ILibraryRootFolderManager
     {
         private readonly IServerConfigurationManager _serverConfigurationManager;
@@ -62,6 +64,7 @@ namespace Emby.Server.Implementations.Library
             _logger = loggerFactory.CreateLogger<LibraryRootFolderManager>();
         }
 
+        /// <inheritdoc/>
         public AggregateFolder GetRootFolder()
         {
             if (_rootFolder is null)
@@ -75,6 +78,7 @@ namespace Emby.Server.Implementations.Library
             return _rootFolder;
         }
 
+        /// <inheritdoc/>
         public Folder GetUserRootFolder()
         {
             if (_userRootFolder is null)
@@ -183,6 +187,8 @@ namespace Emby.Server.Implementations.Library
             return rootFolder!;
         }
 
+        /// <inheritdoc/>
+        // NOTE: Dangles: this should just be part of the library update scheduled task.
         public async Task ValidateTopLibraryFolders(CancellationToken cancellationToken)
         {
             await GetRootFolder().RefreshMetadata(cancellationToken).ConfigureAwait(false);

@@ -13,19 +13,22 @@ namespace Emby.Server.Implementations.Library.Validators
     public class StudiosPostScanTask : ILibraryPostScanTask
     {
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
         private readonly ILogger<StudiosValidator> _logger;
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StudiosPostScanTask" /> class.
         /// </summary>
         /// <param name="itemService">The item service.</param>
+        /// <param name="itemQueryService">The item query service.</param>
         /// <param name="logger">The logger.</param>
         public StudiosPostScanTask(
             IItemService itemService,
+            IItemQueryService itemQueryService,
             ILogger<StudiosValidator> logger)
         {
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
             _logger = logger;
         }
 
@@ -37,7 +40,7 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <returns>Task.</returns>
         public Task Run(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            return new StudiosValidator(_logger, _itemService).Run(progress, cancellationToken);
+            return new StudiosValidator(_logger, _itemService, _itemQueryService).Run(progress, cancellationToken);
         }
     }
 }

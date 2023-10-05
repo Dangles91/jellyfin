@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Events;
 using MediaBrowser.Controller.Channels;
+using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
@@ -31,7 +32,7 @@ namespace Emby.Server.Implementations.EntryPoints
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IProviderManager _providerManager;
         private readonly IItemService _itemService;
-        private readonly ILibraryCollectionManager _libraryCollectionManager;
+        private readonly ICollectionManager _libraryCollectionManager;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
         private readonly ILogger<LibraryChangedNotifier> _logger;
@@ -56,7 +57,7 @@ namespace Emby.Server.Implementations.EntryPoints
             ILogger<LibraryChangedNotifier> logger,
             IProviderManager providerManager,
             IItemService itemService,
-            ILibraryCollectionManager libraryCollectionManager)
+            ICollectionManager libraryCollectionManager)
         {
             _libraryManager = libraryManager;
             _configurationManager = configurationManager;

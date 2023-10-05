@@ -18,19 +18,19 @@ namespace Jellyfin.Api.Controllers;
 [Route("Videos")]
 public class VideoAttachmentsController : BaseJellyfinApiController
 {
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IAttachmentExtractor _attachmentExtractor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VideoAttachmentsController"/> class.
     /// </summary>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="attachmentExtractor">Instance of the <see cref="IAttachmentExtractor"/> interface.</param>
     public VideoAttachmentsController(
-        ILibraryManager libraryManager,
+        IItemService itemService,
         IAttachmentExtractor attachmentExtractor)
     {
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _attachmentExtractor = attachmentExtractor;
     }
 
@@ -54,7 +54,7 @@ public class VideoAttachmentsController : BaseJellyfinApiController
     {
         try
         {
-            var item = _libraryManager.GetItemById(videoId);
+            var item = _itemService.GetItemById(videoId);
             if (item is null)
             {
                 return NotFound();

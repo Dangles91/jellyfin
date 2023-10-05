@@ -81,7 +81,8 @@ namespace Emby.Dlna.Main
             IUserViewManager userViewManager,
             ITVSeriesManager tvSeriesManager,
             ILibraryRootFolderManager libraryRootFolderManager,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _config = config;
             _appHost = appHost;
@@ -105,7 +106,6 @@ namespace Emby.Dlna.Main
                 dlnaManager,
                 userDataManager,
                 imageProcessor,
-                libraryManager,
                 config,
                 userManager,
                 loggerFactory.CreateLogger<ContentDirectory.ContentDirectoryService>(),
@@ -116,7 +116,8 @@ namespace Emby.Dlna.Main
                 mediaEncoder,
                 tvSeriesManager,
                 libraryRootFolderManager,
-                itemService);
+                itemService,
+                itemQueryService);
 
             ConnectionManager = new ConnectionManager.ConnectionManagerService(
                 dlnaManager,

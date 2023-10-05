@@ -20,10 +20,8 @@ namespace MediaBrowser.Controller.Library
         /// Adds the parts.
         /// </summary>
         /// <param name="itemResolvers">The item resolvers.</param>
-        /// <param name="rules">The rules.</param>
         public void AddParts(
-          IEnumerable<IItemResolver> itemResolvers,
-          IEnumerable<IResolverIgnoreRule> rules);
+          IEnumerable<IItemResolver> itemResolvers);
 
         /// <summary>
         /// Resolves the path.
@@ -71,11 +69,11 @@ namespace MediaBrowser.Controller.Library
         List<FileSystemMetadata> NormalizeRootPathList(IEnumerable<FileSystemMetadata> paths);
 
         /// <summary>
-        /// Ignores the file.
+        /// Returns path after subsituting network.
         /// </summary>
-        /// <param name="file">The file.</param>
-        /// <param name="parent">The parent.</param>
-        /// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
-        bool IgnoreFile(FileSystemMetadata file, BaseItem parent);
+        /// <param name="path">The item path.</param>
+        /// <param name="ownerItem">The owner.</param>
+        /// <returns>The substituted path.</returns>
+        string GetPathAfterNetworkSubstitution(string path, BaseItem? ownerItem = null);
     }
 }

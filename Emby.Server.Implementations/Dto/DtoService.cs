@@ -12,6 +12,7 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Channels;
+using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -52,7 +53,9 @@ namespace Emby.Server.Implementations.Dto
 
         private readonly ILyricManager _lyricManager;
         private readonly IItemService _itemService;
-        private readonly ILibraryCollectionManager _libraryCollectionManager;
+        private readonly IItemQueryService _itemQueryService;
+        private readonly IItemPathResolver _itemPathResolver;
+        private readonly ICollectionManager _libraryCollectionManager;
 
         public DtoService(
             ILogger<DtoService> logger,
@@ -65,7 +68,9 @@ namespace Emby.Server.Implementations.Dto
             Lazy<ILiveTvManager> livetvManagerFactory,
             ILyricManager lyricManager,
             IItemService itemService,
-            ILibraryCollectionManager libraryCollectionManager)
+            IItemQueryService itemQueryService,
+            IItemPathResolver itemPathResolver,
+            ICollectionManager libraryCollectionManager)
         {
             _logger = logger;
             _libraryManager = libraryManager;
@@ -77,6 +82,8 @@ namespace Emby.Server.Implementations.Dto
             _livetvManagerFactory = livetvManagerFactory;
             _lyricManager = lyricManager;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
+            _itemPathResolver = itemPathResolver;
             _libraryCollectionManager = libraryCollectionManager;
         }
 
@@ -474,7 +481,7 @@ namespace Emby.Server.Implementations.Dto
         {
             if (!string.IsNullOrEmpty(item.Album))
             {
-                var parentAlbumIds = _itemService.GetItemIds(new InternalItemsQuery
+                var parentAlbumIds = _itemQueryService.GetItemIds(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
                     Name = item.Album,
@@ -522,7 +529,7 @@ namespace Emby.Server.Implementations.Dto
             // Ordering by person type to ensure actors and artists are at the front.
             // This is taking advantage of the fact that they both begin with A
             // This should be improved in the future
-            var people = _libraryManager.GetPeople(item).OrderBy(i => i.SortOrder ?? int.MaxValue)
+            var people = _itemService.GetPeople(item).OrderBy(i => i.SortOrder ?? int.MaxValue)
                 .ThenBy(i =>
                 {
                     if (i.IsType(PersonKind.Actor))
@@ -566,7 +573,7 @@ namespace Emby.Server.Implementations.Dto
                 {
                     try
                     {
-                        return _libraryManager.GetPerson(c);
+                        return _itemService.GetPerson(c);
                     }
                     catch (Exception ex)
                     {
@@ -1257,7 +1264,7 @@ namespace Emby.Server.Implementations.Dto
 
             if (item.SourceType == SourceType.Channel)
             {
-                var channel = _libraryManager.GetItemById(item.ChannelId);
+                var channel = _itemService.GetItemById(item.ChannelId);
                 if (channel is not null)
                 {
                     dto.ChannelName = channel.Name;
@@ -1385,7 +1392,7 @@ namespace Emby.Server.Implementations.Dto
 
             if (item.IsFileProtocol)
             {
-                path = _libraryManager.GetPathAfterNetworkSubstitution(path, ownerItem ?? item);
+                path = _itemPathResolver.GetPathAfterNetworkSubstitution(path, ownerItem ?? item);
             }
 
             return path;

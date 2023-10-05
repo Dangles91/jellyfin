@@ -22,8 +22,10 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Library;
 using MediaBrowser.Model.Querying;
 using Microsoft.AspNetCore.Mvc.TagHelpers;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using TMDbLib.Objects.Changes;
+using Person = MediaBrowser.Controller.Entities.Person;
 
 namespace Emby.Server.Implementations.Library
 {
@@ -35,7 +37,6 @@ namespace Emby.Server.Implementations.Library
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly IItemRepository _itemRepository;
         private readonly ILogger<ItemService> _logger;
-        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly ConcurrentDictionary<Guid, BaseItem> _cache = new();
 
         /// <summary>
@@ -43,18 +44,15 @@ namespace Emby.Server.Implementations.Library
         /// </summary>
         /// <param name="libraryItemIdGenerator">The instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
         /// <param name="itemRepository">The instance of <see cref="IItemRepository"/> interface.</param>
-        /// <param name="logger"></param>
-        /// <param name="libraryRootFolderManager"></param>
+        /// <param name="logger">The logger.</param>
         public ItemService(
             ILibraryItemIdGenerator libraryItemIdGenerator,
             IItemRepository itemRepository,
-            ILogger<ItemService> logger,
-            ILibraryRootFolderManager libraryRootFolderManager)
+            ILogger<ItemService> logger)
         {
             _libraryItemIdGenerator = libraryItemIdGenerator;
             _itemRepository = itemRepository;
             _logger = logger;
-            _libraryRootFolderManager = libraryRootFolderManager;
         }
 
         /// <summary>
@@ -72,26 +70,6 @@ namespace Emby.Server.Implementations.Library
         /// </summary>
         public event EventHandler<ItemRemovedEventArgs> ItemRemoved;
 
-        /// <inheritdoc/>
-        public BaseItem FindItemByPath(string path, bool? isFolder)
-        {
-            // If this returns multiple items it could be tricky figuring out which one is correct.
-            // In most cases, the newest one will be and the others obsolete but not yet cleaned up
-            ArgumentException.ThrowIfNullOrEmpty(path);
-
-            var query = new InternalItemsQuery
-            {
-                Path = path,
-                IsFolder = isFolder,
-                OrderBy = new[] { (ItemSortBy.DateCreated, SortOrder.Descending) },
-                Limit = 1,
-                DtoOptions = new DtoOptions(true)
-            };
-
-            return GetItemList(query)
-                .FirstOrDefault()!;
-        }
-
         /// <summary>
         /// Retrieves the item.
         /// </summary>
@@ -108,7 +86,8 @@ namespace Emby.Server.Implementations.Library
         {
             if (typeof(T) == typeof(MusicArtist))
             {
-                var existing = GetItemList(new InternalItemsQuery
+                // TODO: Dangles: Need to do something with this.
+                var existing = _itemRepository.GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.MusicArtist },
                     Name = name,
@@ -125,7 +104,7 @@ namespace Emby.Server.Implementations.Library
             }
 
             var path = getPathFn(name);
-            var id = GetItemByNameId<T>(path);
+            var id = GetItemIdFromPath<T>(path);
             var item = GetItemById(id) as T;
             if (item is null)
             {
@@ -145,7 +124,7 @@ namespace Emby.Server.Implementations.Library
         }
 
         /// <inheritdoc/>
-        public Guid GetItemByNameId<T>(string path)
+        public Guid GetItemIdFromPath<T>(string path)
               where T : BaseItem, new()
         {
             return _libraryItemIdGenerator.Generate(path, typeof(T));
@@ -179,49 +158,6 @@ namespace Emby.Server.Implementations.Library
             }
 
             return item;
-        }
-
-        public List<BaseItem> GetItemList(InternalItemsQuery query, bool allowExternalContent)
-        {
-            if (query.Recursive && !query.ParentId.Equals(Guid.Empty))
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, new[] { parent });
-                }
-            }
-
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User, allowExternalContent);
-            }
-
-            var itemList = _itemRepository.GetItemList(query);
-            var user = query.User;
-            if (user is not null)
-            {
-                return itemList.Where(i => i.IsVisible(user)).ToList();
-            }
-
-            return itemList;
-        }
-
-        public List<BaseItem> GetItemList(InternalItemsQuery query)
-        {
-            return GetItemList(query, true);
-        }
-
-        public List<BaseItem> GetItemList(InternalItemsQuery query, List<BaseItem> parents)
-        {
-            SetTopParentIdsOrAncestors(query, parents);
-
-            if (query.AncestorIds.Length == 0 && query.TopParentIds.Length == 0 && query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            return _itemRepository.GetItemList(query);
         }
 
         /// <inheritdoc/>
@@ -264,298 +200,13 @@ namespace Emby.Server.Implementations.Library
                 });
         }
 
-        public int GetCount(InternalItemsQuery query)
-        {
-            if (query.Recursive && !query.ParentId.Equals(Guid.Empty))
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, new[] { parent });
-                }
-            }
-
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            return _itemRepository.GetCount(query);
-        }
-
-        public QueryResult<BaseItem> QueryItems(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            if (query.EnableTotalRecordCount)
-            {
-                return _itemRepository.GetItems(query);
-            }
-
-            return new QueryResult<BaseItem>(
-                query.StartIndex,
-                null,
-                _itemRepository.GetItemList(query));
-        }
-
-        public List<Guid> GetItemIds(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            return _itemRepository.GetItemIdsList(query);
-        }
-
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetStudios(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetStudios(query);
-        }
-
+        /// <inheritdoc/>
         public Studio GetStudio(string name)
         {
             return CreateItemByName<Studio>(Studio.GetPath, name, new DtoOptions(true));
         }
 
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetGenres(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetGenres(query);
-        }
-
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetMusicGenres(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetMusicGenres(query);
-        }
-
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetAllArtists(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetAllArtists(query);
-        }
-
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetArtists(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetArtists(query);
-        }
-
-        public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetAlbumArtists(InternalItemsQuery query)
-        {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            SetTopParentOrAncestorIds(query);
-            return _itemRepository.GetAlbumArtists(query);
-        }
-
-        public QueryResult<BaseItem> GetItemsResult(InternalItemsQuery query)
-        {
-            if (query.Recursive && !query.ParentId.Equals(Guid.Empty))
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, new[] { parent });
-                }
-            }
-
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            if (query.EnableTotalRecordCount)
-            {
-                return _itemRepository.GetItems(query);
-            }
-
-            return new QueryResult<BaseItem>(
-                query.StartIndex,
-                null,
-                _itemRepository.GetItemList(query));
-        }
-
-        private void SetTopParentIdsOrAncestors(InternalItemsQuery query, IReadOnlyCollection<BaseItem> parents)
-        {
-            if (parents.All(i => i is ICollectionFolder || i is UserView))
-            {
-                // Optimize by querying against top level views
-                query.TopParentIds = parents.SelectMany(i => GetTopParentIdsForQuery(i, query.User)).ToArray();
-
-                // Prevent searching in all libraries due to empty filter
-                if (query.TopParentIds.Length == 0)
-                {
-                    query.TopParentIds = new[] { Guid.NewGuid() };
-                }
-            }
-            else
-            {
-                // We need to be able to query from any arbitrary ancestor up the tree
-                query.AncestorIds = parents.SelectMany(i => i.GetIdsForAncestorQuery()).ToArray();
-
-                // Prevent searching in all libraries due to empty filter
-                if (query.AncestorIds.Length == 0)
-                {
-                    query.AncestorIds = new[] { Guid.NewGuid() };
-                }
-            }
-
-            query.Parent = null;
-        }
-
-        private IEnumerable<Guid> GetTopParentIdsForQuery(BaseItem item, User user)
-        {
-            if (item is UserView view)
-            {
-                if (string.Equals(view.ViewType, CollectionType.LiveTv, StringComparison.Ordinal))
-                {
-                    return new[] { view.Id };
-                }
-
-                // Translate view into folders
-                if (!view.DisplayParentId.Equals(Guid.Empty))
-                {
-                    var displayParent = GetItemById(view.DisplayParentId);
-                    if (displayParent is not null)
-                    {
-                        return GetTopParentIdsForQuery(displayParent, user);
-                    }
-
-                    return Array.Empty<Guid>();
-                }
-
-                if (!view.ParentId.Equals(Guid.Empty))
-                {
-                    var displayParent = GetItemById(view.ParentId);
-                    if (displayParent is not null)
-                    {
-                        return GetTopParentIdsForQuery(displayParent, user);
-                    }
-
-                    return Array.Empty<Guid>();
-                }
-
-                // Handle grouping
-                if (user is not null && !string.IsNullOrEmpty(view.ViewType) && UserView.IsEligibleForGrouping(view.ViewType)
-                    && user.GetPreference(PreferenceKind.GroupedFolders).Length > 0)
-                {
-                    return _libraryRootFolderManager.GetUserRootFolder()
-                        .GetChildren(user, true)
-                        .OfType<CollectionFolder>()
-                        .Where(i => string.IsNullOrEmpty(i.CollectionType) || string.Equals(i.CollectionType, view.ViewType, StringComparison.OrdinalIgnoreCase))
-                        .Where(i => user.IsFolderGrouped(i.Id))
-                        .SelectMany(i => GetTopParentIdsForQuery(i, user));
-                }
-
-                return Array.Empty<Guid>();
-            }
-
-            if (item is CollectionFolder collectionFolder)
-            {
-                return collectionFolder.PhysicalFolderIds;
-            }
-
-            var topParent = item.GetTopParent();
-            if (topParent is not null)
-            {
-                return new[] { topParent.Id };
-            }
-
-            return Array.Empty<Guid>();
-        }
-
-
-        private void AddUserToQuery(InternalItemsQuery query, User user, bool allowExternalContent = true)
-        {
-            if (query.AncestorIds.Length == 0 &&
-                query.ParentId.Equals(Guid.Empty) &&
-                query.ChannelIds.Count == 0 &&
-                query.TopParentIds.Length == 0 &&
-                string.IsNullOrEmpty(query.AncestorWithPresentationUniqueKey) &&
-                string.IsNullOrEmpty(query.SeriesPresentationUniqueKey) &&
-                query.ItemIds.Length == 0)
-            {
-                var userViews = UserViewManager.GetUserViews(new UserViewQuery
-                {
-                    UserId = user.Id,
-                    IncludeHidden = true,
-                    IncludeExternalContent = allowExternalContent
-                });
-
-                query.TopParentIds = userViews.SelectMany(i => GetTopParentIdsForQuery(i, user)).ToArray();
-
-                // Prevent searching in all libraries due to empty filter
-                if (query.TopParentIds.Length == 0)
-                {
-                    query.TopParentIds = new[] { Guid.NewGuid() };
-                }
-            }
-        }
-
-        private void SetTopParentOrAncestorIds(InternalItemsQuery query)
-        {
-            var ancestorIds = query.AncestorIds;
-            int len = ancestorIds.Length;
-            if (len == 0)
-            {
-                return;
-            }
-
-            var parents = new BaseItem[len];
-            for (int i = 0; i < len; i++)
-            {
-                parents[i] = GetItemById(ancestorIds[i]);
-                if (parents[i] is not (ICollectionFolder or UserView))
-                {
-                    return;
-                }
-            }
-
-            // Optimize by querying against top level views
-            query.TopParentIds = parents.SelectMany(i => GetTopParentIdsForQuery(i, query.User)).ToArray();
-            query.AncestorIds = Array.Empty<Guid>();
-
-            // Prevent searching in all libraries due to empty filter
-            if (query.TopParentIds.Length == 0)
-            {
-                query.TopParentIds = new[] { Guid.NewGuid() };
-            }
-        }
-
+        /// <inheritdoc/>
         public void UpdatePeople(Guid itemId, List<PersonInfo> people)
         {
             _itemRepository.UpdatePeople(itemId, people);
@@ -591,9 +242,22 @@ namespace Emby.Server.Implementations.Library
             return GetArtist(name, new DtoOptions(true));
         }
 
+        /// <inheritdoc/>
         public MusicArtist GetArtist(string name, DtoOptions options)
         {
             return CreateItemByName<MusicArtist>(MusicArtist.GetPath, name, options);
+        }
+
+        /// <inheritdoc/>
+        public List<string> GetAllArtistNames()
+        {
+            return _itemRepository.GetAllArtistNames();
+        }
+
+        /// <inheritdoc/>
+        public List<string> GetStudioNames()
+        {
+            return _itemRepository.GetStudioNames();
         }
 
         /// <inheritdoc/>
@@ -612,6 +276,25 @@ namespace Emby.Server.Implementations.Library
         public List<PersonInfo> GetPeople(InternalPeopleQuery query)
         {
             return _itemRepository.GetPeople(query);
+        }
+
+        /// <inheritdoc/>
+        public List<PersonInfo> GetPeople(BaseItem item)
+        {
+            if (item.SupportsPeople)
+            {
+                var people = GetPeople(new InternalPeopleQuery
+                {
+                    ItemId = item.Id
+                });
+
+                if (people.Count > 0)
+                {
+                    return people;
+                }
+            }
+
+            return new List<PersonInfo>();
         }
 
         /// <inheritdoc/>
@@ -649,6 +332,7 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
+        /// <inheritdoc/>
         public Task UpdateItemAsync(BaseItem item, BaseItem parent, ItemUpdateType updateReason, CancellationToken cancellationToken)
         {
             UpdateItems(new BaseItem[] { item }, parent, updateReason, cancellationToken);
@@ -687,6 +371,26 @@ namespace Emby.Server.Implementations.Library
         /// <param name="parent">The parent item.</param>
         public void CreateItem(BaseItem item, BaseItem parent)
         {
+            if (parent is Folder parentFolder)
+            {
+                item.SetParent(parentFolder);
+            }
+
+            if (item.Id.Equals(Guid.Empty))
+            {
+                item.Id = _libraryItemIdGenerator.Generate(item.Path, item.GetType());
+            }
+
+            if (item.DateCreated == DateTime.MinValue)
+            {
+                item.DateCreated = DateTime.UtcNow;
+            }
+
+            if (item.DateModified == DateTime.MinValue)
+            {
+                item.DateModified = DateTime.UtcNow;
+            }
+
             CreateItems(new[] { item }, parent, CancellationToken.None);
         }
 
@@ -731,6 +435,30 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the person.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>Task{Person}.</returns>
+        public Person GetPerson(string name)
+        {
+            var path = Person.GetPath(name);
+            var id = GetItemIdFromPath<Person>(path);
+            if (GetItemById(id) is not Person item)
+            {
+                item = new Person
+                {
+                    Name = name,
+                    Id = id,
+                    DateCreated = DateTime.UtcNow,
+                    DateModified = DateTime.UtcNow,
+                    Path = path
+                };
+            }
+
+            return item;
         }
 
         /// <inheritdoc/>

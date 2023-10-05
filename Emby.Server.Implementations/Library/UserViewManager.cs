@@ -33,8 +33,22 @@ namespace Emby.Server.Implementations.Library
         private readonly IChannelManager _channelManager;
         private readonly ILiveTvManager _liveTvManager;
         private readonly IServerConfigurationManager _config;
+        private readonly IItemQueryService _itemQueryService;
+        private readonly IItemService _itemService;
+        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly ILibraryViewService _libraryViewService;
 
-        public UserViewManager(ILibraryManager libraryManager, ILocalizationManager localizationManager, IUserManager userManager, IChannelManager channelManager, ILiveTvManager liveTvManager, IServerConfigurationManager config)
+        public UserViewManager(
+            ILibraryManager libraryManager,
+            ILocalizationManager localizationManager,
+            IUserManager userManager,
+            IChannelManager channelManager,
+            ILiveTvManager liveTvManager,
+            IServerConfigurationManager config,
+            IItemQueryService itemQueryService,
+            IItemService itemService,
+            ILibraryRootFolderManager libraryRootFolderManager,
+            ILibraryViewService libraryViewService)
         {
             _libraryManager = libraryManager;
             _localizationManager = localizationManager;
@@ -42,6 +56,10 @@ namespace Emby.Server.Implementations.Library
             _channelManager = channelManager;
             _liveTvManager = liveTvManager;
             _config = config;
+            _itemQueryService = itemQueryService;
+            _itemService = itemService;
+            _libraryRootFolderManager = libraryRootFolderManager;
+            _libraryViewService = libraryViewService;
         }
 
         public Folder[] GetUserViews(UserViewQuery query)
@@ -52,7 +70,7 @@ namespace Emby.Server.Implementations.Library
                 throw new ArgumentException("User id specified in the query does not exist.", nameof(query));
             }
 
-            var folders = _libraryManager.GetUserRootFolder()
+            var folders = _libraryRootFolderManager.GetUserRootFolder()
                 .GetChildren(user, true)
                 .OfType<Folder>()
                 .ToList();
@@ -81,7 +99,7 @@ namespace Emby.Server.Implementations.Library
 
                 if (UserView.IsUserSpecific(folder))
                 {
-                    list.Add(_libraryManager.GetNamedView(user, folder.Name, folder.Id, folderViewType, null));
+                    list.Add(_libraryViewService.GetNamedView(user, folder.Name, folder.Id, folderViewType, null));
                     continue;
                 }
 
@@ -119,7 +137,7 @@ namespace Emby.Server.Implementations.Library
             if (_config.Configuration.EnableFolderView)
             {
                 var name = _localizationManager.GetLocalizedString("Folders");
-                list.Add(_libraryManager.GetNamedView(name, CollectionType.Folders, string.Empty));
+                list.Add(_libraryViewService.GetNamedView(name, CollectionType.Folders, string.Empty));
             }
 
             if (query.IncludeExternalContent)
@@ -169,7 +187,7 @@ namespace Emby.Server.Implementations.Library
         {
             var uniqueId = parentId + "subview" + type;
 
-            return _libraryManager.GetNamedView(name, parentId, type, sortName, uniqueId);
+            return _libraryViewService.GetNamedView(name, parentId, type, sortName, uniqueId);
         }
 
         public UserView GetUserSubView(Guid parentId, string type, string localizationKey, string sortName)
@@ -198,12 +216,12 @@ namespace Emby.Server.Implementations.Library
             }
 
             var name = _localizationManager.GetLocalizedString(localizationKey);
-            return _libraryManager.GetNamedView(user, name, viewType, sortName);
+            return _libraryViewService.GetNamedView(user, name, viewType, sortName);
         }
 
         public UserView GetUserView(Folder parent, string viewType, string sortName)
         {
-            return _libraryManager.GetShadowView(parent, viewType, sortName);
+            return _libraryViewService.GetShadowView(parent, viewType, sortName);
         }
 
         public List<Tuple<BaseItem, List<BaseItem>>> GetLatestItems(LatestItemsQuery request, DtoOptions options)
@@ -257,7 +275,7 @@ namespace Emby.Server.Implementations.Library
 
             if (!parentId.Equals(default))
             {
-                var parentItem = _libraryManager.GetItemById(parentId);
+                var parentItem = _itemService.GetItemById(parentId);
                 if (parentItem is Channel)
                 {
                     return _channelManager.GetLatestChannelItemsInternal(
@@ -288,7 +306,7 @@ namespace Emby.Server.Implementations.Library
 
             if (parents.Count == 0)
             {
-                parents = _libraryManager.GetUserRootFolder().GetChildren(user, true)
+                parents = _libraryRootFolderManager.GetUserRootFolder().GetChildren(user, true)
                     .Where(i => i is Folder)
                     .Where(i => !user.GetPreferenceValues<Guid>(PreferenceKind.LatestItemExcludes)
                         .Contains(i.Id))
@@ -381,10 +399,10 @@ namespace Emby.Server.Implementations.Library
 
             if (parents.Count == 0)
             {
-                return _itemService.GetItemList(query, false);
+                return _itemQueryService.GetItemList(query, false);
             }
 
-            return _itemService.GetItemList(query, parents);
+            return _itemQueryService.GetItemList(query, parents);
         }
     }
 }

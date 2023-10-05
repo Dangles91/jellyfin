@@ -128,7 +128,7 @@ namespace MediaBrowser.Controller.Entities.TV
         {
             var seriesKey = GetUniqueSeriesKey(this);
 
-            var result = ItemService.GetCount(new InternalItemsQuery(user)
+            var result = ItemQueryService.GetCount(new InternalItemsQuery(user)
             {
                 AncestorWithPresentationUniqueKey = null,
                 SeriesPresentationUniqueKey = seriesKey,
@@ -165,7 +165,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
             query.IsVirtualItem = false;
             query.Limit = 0;
-            var totalRecordCount = ItemService.GetCount(query);
+            var totalRecordCount = ItemQueryService.GetCount(query);
 
             return totalRecordCount;
         }
@@ -210,7 +210,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
             SetSeasonQueryOptions(query, user);
 
-            return ItemService.GetItemList(query);
+            return ItemQueryService.GetItemList(query);
         }
 
         private void SetSeasonQueryOptions(InternalItemsQuery query, User user)
@@ -249,12 +249,12 @@ namespace MediaBrowser.Controller.Entities.TV
                 }
 
                 query.IsVirtualItem = false;
-                return ItemService.GetItemsResult(query);
+                return ItemQueryService.GetItemsResult(query);
             }
 
             SetSeasonQueryOptions(query, user);
 
-            return ItemService.GetItemsResult(query);
+            return ItemQueryService.GetItemsResult(query);
         }
 
         public IEnumerable<BaseItem> GetEpisodes(User user, DtoOptions options)
@@ -275,7 +275,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 query.IsMissing = false;
             }
 
-            var allItems = ItemService.GetItemList(query);
+            var allItems = ItemQueryService.GetItemList(query);
 
             var allSeriesEpisodes = allItems.OfType<Episode>().ToList();
 
@@ -381,7 +381,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 }
             }
 
-            var allItems = ItemService.GetItemList(query);
+            var allItems = ItemQueryService.GetItemList(query);
 
             return GetSeasonEpisodes(parentSeason, user, allItems, options);
         }

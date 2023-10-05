@@ -44,11 +44,7 @@ namespace Emby.Server.Implementations.SyncPlay
         /// The session manager.
         /// </summary>
         private readonly ISessionManager _sessionManager;
-
-        /// <summary>
-        /// The library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
+        private readonly IItemService _itemService;
 
         /// <summary>
         /// The participants, or members of the group.
@@ -67,17 +63,17 @@ namespace Emby.Server.Implementations.SyncPlay
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="userManager">The user manager.</param>
         /// <param name="sessionManager">The session manager.</param>
-        /// <param name="libraryManager">The library manager.</param>
+        /// <param name="itemService">The item service.</param>
         public Group(
             ILoggerFactory loggerFactory,
             IUserManager userManager,
             ISessionManager sessionManager,
-            ILibraryManager libraryManager)
+            IItemService itemService)
         {
             _loggerFactory = loggerFactory;
             _userManager = userManager;
             _sessionManager = sessionManager;
-            _libraryManager = libraryManager;
+            _itemService = itemService;
             _logger = loggerFactory.CreateLogger<Group>();
 
             _state = new IdleGroupState(loggerFactory);
@@ -204,7 +200,7 @@ namespace Emby.Server.Implementations.SyncPlay
 
             foreach (var itemId in queue)
             {
-                var item = _libraryManager.GetItemById(itemId);
+                var item = _itemService.GetItemById(itemId);
                 if (!item.IsVisibleStandalone(user))
                 {
                     return false;
@@ -508,7 +504,7 @@ namespace Emby.Server.Implementations.SyncPlay
             PlayQueue.Reset();
             PlayQueue.SetPlaylist(playQueue);
             PlayQueue.SetPlayingItemByIndex(playingItemPosition);
-            var item = _libraryManager.GetItemById(PlayQueue.GetPlayingItemId());
+            var item = _itemService.GetItemById(PlayQueue.GetPlayingItemId());
             RunTimeTicks = item.RunTimeTicks ?? 0;
             PositionTicks = startPositionTicks;
             LastActivity = DateTime.UtcNow;
@@ -523,7 +519,7 @@ namespace Emby.Server.Implementations.SyncPlay
 
             if (itemFound)
             {
-                var item = _libraryManager.GetItemById(PlayQueue.GetPlayingItemId());
+                var item = _itemService.GetItemById(PlayQueue.GetPlayingItemId());
                 RunTimeTicks = item.RunTimeTicks ?? 0;
             }
             else
@@ -555,7 +551,7 @@ namespace Emby.Server.Implementations.SyncPlay
                 var itemId = PlayQueue.GetPlayingItemId();
                 if (!itemId.Equals(default))
                 {
-                    var item = _libraryManager.GetItemById(itemId);
+                    var item = _itemService.GetItemById(itemId);
                     RunTimeTicks = item.RunTimeTicks ?? 0;
                 }
                 else
@@ -615,7 +611,7 @@ namespace Emby.Server.Implementations.SyncPlay
             var update = PlayQueue.Next();
             if (update)
             {
-                var item = _libraryManager.GetItemById(PlayQueue.GetPlayingItemId());
+                var item = _itemService.GetItemById(PlayQueue.GetPlayingItemId());
                 RunTimeTicks = item.RunTimeTicks ?? 0;
                 RestartCurrentItem();
                 return true;
@@ -630,7 +626,7 @@ namespace Emby.Server.Implementations.SyncPlay
             var update = PlayQueue.Previous();
             if (update)
             {
-                var item = _libraryManager.GetItemById(PlayQueue.GetPlayingItemId());
+                var item = _itemService.GetItemById(PlayQueue.GetPlayingItemId());
                 RunTimeTicks = item.RunTimeTicks ?? 0;
                 RestartCurrentItem();
                 return true;

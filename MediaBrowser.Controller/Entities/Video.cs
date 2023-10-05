@@ -153,7 +153,7 @@ namespace MediaBrowser.Controller.Entities
             {
                 if (!string.IsNullOrEmpty(PrimaryVersionId))
                 {
-                    var item = LibraryManager.GetItemById(PrimaryVersionId);
+                    var item = LibraryManager.GetItemById(new Guid(PrimaryVersionId));
                     if (item is Video video)
                     {
                         return video.MediaSourceCount;
@@ -348,12 +348,12 @@ namespace MediaBrowser.Controller.Entities
 
         public IEnumerable<Guid> GetAdditionalPartIds()
         {
-            return AdditionalParts.Select(i => LibraryManager.GetNewItemId(i, typeof(Video)));
+            return AdditionalParts.Select(i => ItemIdGenerator.Generate(i, typeof(Video)));
         }
 
         public IEnumerable<Guid> GetLocalAlternateVersionIds()
         {
-            return LocalAlternateVersions.Select(i => LibraryManager.GetNewItemId(i, typeof(Video)));
+            return LocalAlternateVersions.Select(i => ItemIdGenerator.Generate(i, typeof(Video)));
         }
 
         private string GetUserDataKey(string providerId)
@@ -528,7 +528,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (!string.IsNullOrEmpty(PrimaryVersionId))
             {
-                if (LibraryManager.GetItemById(PrimaryVersionId) is Video primary)
+                if (LibraryManager.GetItemById(new Guid(PrimaryVersionId)) is Video primary)
                 {
                     var existingIds = list.Select(i => i.Item1.Id).ToList();
                     list.Add((primary, MediaSourceType.Grouping));

@@ -56,6 +56,7 @@ public class LibraryController : BaseJellyfinApiController
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly ILibraryRootFolderManager _libraryRootFolderManager;
     private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LibraryController"/> class.
@@ -71,6 +72,7 @@ public class LibraryController : BaseJellyfinApiController
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="libraryRootFolderManager">Instance of the <see cref="ILibraryRootFolderManager"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public LibraryController(
         IProviderManager providerManager,
         ILibraryManager libraryManager,
@@ -82,7 +84,8 @@ public class LibraryController : BaseJellyfinApiController
         ILogger<LibraryController> logger,
         IServerConfigurationManager serverConfigurationManager,
         ILibraryRootFolderManager libraryRootFolderManager,
-        IItemService itemService)
+        IItemService itemService,
+        IItemQueryService itemQueryService)
     {
         _providerManager = providerManager;
         _libraryManager = libraryManager;
@@ -95,6 +98,7 @@ public class LibraryController : BaseJellyfinApiController
         _serverConfigurationManager = serverConfigurationManager;
         _libraryRootFolderManager = libraryRootFolderManager;
         _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -111,7 +115,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesFile("video/*", "audio/*")]
     public ActionResult GetFile([FromRoute, Required] Guid itemId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -161,7 +165,7 @@ public class LibraryController : BaseJellyfinApiController
             ? (userId.Value.Equals(default)
                 ? _libraryRootFolderManager.GetRootFolder()
                 : _libraryRootFolderManager.GetUserRootFolder())
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -228,7 +232,7 @@ public class LibraryController : BaseJellyfinApiController
             ? (userId.Value.Equals(default)
                 ? _libraryRootFolderManager.GetRootFolder()
                 : _libraryRootFolderManager.GetUserRootFolder())
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -354,7 +358,7 @@ public class LibraryController : BaseJellyfinApiController
             return Unauthorized("Unauthorized access");
         }
 
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -399,7 +403,7 @@ public class LibraryController : BaseJellyfinApiController
 
         foreach (var i in ids)
         {
-            var item = _libraryManager.GetItemById(i);
+            var item = _itemService.GetItemById(i);
             if (item is null)
             {
                 return NotFound();
@@ -466,7 +470,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<IEnumerable<BaseItemDto>> GetAncestors([FromRoute, Required] Guid itemId, [FromQuery] Guid? userId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         userId = RequestHelpers.GetUserId(User, userId);
 
         if (item is null)
@@ -555,7 +559,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult PostUpdatedSeries([FromQuery] string? tvdbId)
     {
-        var series = _itemService.GetItemList(new InternalItemsQuery
+        var series = _itemQueryService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Series },
             DtoOptions = new DtoOptions(false)
@@ -585,7 +589,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult PostUpdatedMovies([FromQuery] string? tmdbId, [FromQuery] string? imdbId)
     {
-        var movies = _itemService.GetItemList(new InternalItemsQuery
+        var movies = _itemQueryService.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Movie },
             DtoOptions = new DtoOptions(false)
@@ -649,7 +653,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesFile("video/*", "audio/*")]
     public async Task<ActionResult> GetDownload([FromRoute, Required] Guid itemId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -713,7 +717,7 @@ public class LibraryController : BaseJellyfinApiController
             ? (userId.Value.Equals(default)
                 ? _libraryRootFolderManager.GetRootFolder()
                 : _libraryRootFolderManager.GetUserRootFolder())
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         if (item is null)
         {
@@ -775,7 +779,7 @@ public class LibraryController : BaseJellyfinApiController
             query.ExcludeArtistIds = excludeArtistIds;
         }
 
-        List<BaseItem> itemsResult = _itemService.GetItemList(query);
+        List<BaseItem> itemsResult = _itemQueryService.GetItemList(query);
 
         var returnList = _dtoService.GetBaseItemDtos(itemsResult, dtoOptions, user);
 
@@ -901,7 +905,7 @@ public class LibraryController : BaseJellyfinApiController
             }
         };
 
-        return _itemService.GetItemsResult(query).TotalRecordCount;
+        return _itemQueryService.GetItemsResult(query).TotalRecordCount;
     }
 
     private BaseItem? TranslateParentItem(BaseItem item, User user)

@@ -3,7 +3,6 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -15,25 +14,18 @@ using System.Threading.Tasks;
 using Emby.Naming.Common;
 using Emby.Naming.TV;
 using Emby.Server.Implementations.Library.Resolvers;
-using Emby.Server.Implementations.Library.Validators;
-using Emby.Server.Implementations.Playlists;
 using Emby.Server.Implementations.ScheduledTasks.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
-using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Progress;
-using MediaBrowser.Controller;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
-using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaEncoding;
-using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Resolvers;
 using MediaBrowser.Controller.Sorting;
@@ -43,10 +35,7 @@ using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Library;
-using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using EpisodeInfo = Emby.Naming.TV.EpisodeInfo;
@@ -74,21 +63,17 @@ namespace Emby.Server.Implementations.Library
         private readonly IFileSystem _fileSystem;
         private readonly IImageProcessor _imageProcessor;
         private readonly NamingOptions _namingOptions;
-        private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly ILibraryRootFolderManager _rootFolderManager;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
         private readonly IItemService _itemService;
         private readonly IItemPathResolver _itemPathResolver;
         private readonly ExtraResolver _extraResolver;
 
-        private readonly TimeSpan _viewRefreshInterval = TimeSpan.FromHours(24);
-
         private bool _wizardCompleted;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LibraryManager" /> class.
         /// </summary>
-        /// <param name="appHost">The application host.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="taskManager">The task manager.</param>
         /// <param name="userManager">The user manager.</param>
@@ -101,13 +86,11 @@ namespace Emby.Server.Implementations.Library
         /// <param name="imageProcessor">The image processor.</param>
         /// <param name="namingOptions">The naming options.</param>
         /// <param name="directoryService">The directory service.</param>
-        /// <param name="libraryItemIdGenerator">The configured itemd id generator.</param>
         /// <param name="rootFolderManager">The instance of <see cref="ILibraryRootFolderManager"/> interface.</param>
         /// <param name="libraryOptionsManager">The instance of <see cref="ILibraryOptionsManager"/> interface.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
         /// <param name="itemPathResolver">The instance of <see cref="IItemPathResolver"/> interface.</param>
         public LibraryManager(
-            IServerApplicationHost appHost,
             ILoggerFactory loggerFactory,
             ITaskManager taskManager,
             IUserManager userManager,
@@ -120,7 +103,6 @@ namespace Emby.Server.Implementations.Library
             IImageProcessor imageProcessor,
             NamingOptions namingOptions,
             IDirectoryService directoryService,
-            ILibraryItemIdGenerator libraryItemIdGenerator,
             ILibraryRootFolderManager rootFolderManager,
             ILibraryOptionsManager libraryOptionsManager,
             IItemService itemService,
@@ -137,7 +119,6 @@ namespace Emby.Server.Implementations.Library
             _mediaEncoder = mediaEncoder;
             _imageProcessor = imageProcessor;
             _namingOptions = namingOptions;
-            _libraryItemIdGenerator = libraryItemIdGenerator;
             _rootFolderManager = rootFolderManager;
             _libraryOptionsManager = libraryOptionsManager;
             _itemService = itemService;
@@ -358,11 +339,6 @@ namespace Emby.Server.Implementations.Library
             return list;
         }
 
-        public Guid GetNewItemId(string key, Type type)
-        {
-            return _libraryItemIdGenerator.Generate(key, type);
-        }
-
         public bool IgnoreFile(FileSystemMetadata file, BaseItem parent)
             => EntityResolutionIgnoreRules.Any(r => r.ShouldIgnore(file, parent));
 
@@ -371,43 +347,19 @@ namespace Emby.Server.Implementations.Library
             return _rootFolderManager.GetUserRootFolder();
         }
 
-        /// <summary>
-        /// Gets the person.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <returns>Task{Person}.</returns>
-        public Person GetPerson(string name)
-        {
-            var path = Person.GetPath(name);
-            var id = _itemService.GetItemByNameId<Person>(path);
-            if (GetItemById(id) is not Person item)
-            {
-                item = new Person
-                {
-                    Name = name,
-                    Id = id,
-                    DateCreated = DateTime.UtcNow,
-                    DateModified = DateTime.UtcNow,
-                    Path = path
-                };
-            }
-
-            return item;
-        }
-
         public Guid GetStudioId(string name)
         {
-            return _itemService.GetItemByNameId<Studio>(Studio.GetPath(name));
+            return _itemService.GetItemIdFromPath<Studio>(Studio.GetPath(name));
         }
 
         public Guid GetGenreId(string name)
         {
-            return _itemService.GetItemByNameId<Genre>(Genre.GetPath(name));
+            return _itemService.GetItemIdFromPath<Genre>(Genre.GetPath(name));
         }
 
         public Guid GetMusicGenreId(string name)
         {
-            return _itemService.GetItemByNameId<MusicGenre>(MusicGenre.GetPath(name));
+            return _itemService.GetItemIdFromPath<MusicGenre>(MusicGenre.GetPath(name));
         }
 
         /// <summary>
@@ -445,15 +397,6 @@ namespace Emby.Server.Implementations.Library
             var name = value.ToString(CultureInfo.InvariantCulture);
 
             return _itemService.CreateItemByName<Year>(Year.GetPath, name, new DtoOptions(true));
-        }
-
-        /// <inheritdoc />
-        public Task ValidatePeopleAsync(IProgress<double> progress, CancellationToken cancellationToken)
-        {
-            // Ensure the location is available.
-            Directory.CreateDirectory(_configurationManager.ApplicationPaths.PeoplePath);
-
-            return new PeopleValidator(this, _logger, _fileSystem, _itemService).ValidatePeople(cancellationToken, progress);
         }
 
         /// <summary>
@@ -677,11 +620,6 @@ namespace Emby.Server.Implementations.Library
         public BaseItem GetItemById(Guid id)
         {
             return _itemService.GetItemById(id);
-        }
-
-        public List<BaseItem> GetItemList(InternalItemsQuery query)
-        {
-            return _itemService.GetItemList(query, true);
         }
 
         /// <summary>
@@ -988,263 +926,6 @@ namespace Emby.Server.Implementations.Library
             await UpdateImagesAsync(item, updateReason >= ItemUpdateType.ImageUpdate).ConfigureAwait(false);
         }
 
-        public UserView GetNamedView(
-            User user,
-            string name,
-            string viewType,
-            string sortName)
-        {
-            return GetNamedView(user, name, Guid.Empty, viewType, sortName);
-        }
-
-        public UserView GetNamedView(
-            string name,
-            string viewType,
-            string sortName)
-        {
-            var path = Path.Combine(
-                _configurationManager.ApplicationPaths.InternalMetadataPath,
-                "views",
-                _fileSystem.GetValidFilename(viewType));
-
-            var id = GetNewItemId(path + "_namedview_" + name, typeof(UserView));
-
-            var item = GetItemById(id) as UserView;
-
-            var refresh = false;
-
-            if (item is null || !string.Equals(item.Path, path, StringComparison.OrdinalIgnoreCase))
-            {
-                Directory.CreateDirectory(path);
-
-                item = new UserView
-                {
-                    Path = path,
-                    Id = id,
-                    DateCreated = DateTime.UtcNow,
-                    Name = name,
-                    ViewType = viewType,
-                    ForcedSortName = sortName
-                };
-
-                _itemService.CreateItem(item, null);
-
-                refresh = true;
-            }
-
-            if (refresh)
-            {
-                item.UpdateToRepositoryAsync(ItemUpdateType.MetadataImport, CancellationToken.None).GetAwaiter().GetResult();
-                ProviderManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.Normal);
-            }
-
-            return item;
-        }
-
-        public UserView GetNamedView(
-            User user,
-            string name,
-            Guid parentId,
-            string viewType,
-            string sortName)
-        {
-            var parentIdString = parentId.Equals(Guid.Empty)
-                ? null
-                : parentId.ToString("N", CultureInfo.InvariantCulture);
-            var idValues = "38_namedview_" + name + user.Id.ToString("N", CultureInfo.InvariantCulture) + (parentIdString ?? string.Empty) + (viewType ?? string.Empty);
-
-            var id = GetNewItemId(idValues, typeof(UserView));
-
-            var path = Path.Combine(_configurationManager.ApplicationPaths.InternalMetadataPath, "views", id.ToString("N", CultureInfo.InvariantCulture));
-
-            var item = GetItemById(id) as UserView;
-
-            var isNew = false;
-
-            if (item is null)
-            {
-                Directory.CreateDirectory(path);
-
-                item = new UserView
-                {
-                    Path = path,
-                    Id = id,
-                    DateCreated = DateTime.UtcNow,
-                    Name = name,
-                    ViewType = viewType,
-                    ForcedSortName = sortName,
-                    UserId = user.Id,
-                    DisplayParentId = parentId
-                };
-
-                _itemService.CreateItem(item, null);
-
-                isNew = true;
-            }
-
-            var refresh = isNew || DateTime.UtcNow - item.DateLastRefreshed >= _viewRefreshInterval;
-
-            if (!refresh && !item.DisplayParentId.Equals(default))
-            {
-                var displayParent = GetItemById(item.DisplayParentId);
-                refresh = displayParent is not null && displayParent.DateLastSaved > item.DateLastRefreshed;
-            }
-
-            if (refresh)
-            {
-                ProviderManager.QueueRefresh(
-                    item.Id,
-                    new MetadataRefreshOptions(new DirectoryService(_fileSystem))
-                    {
-                        // Need to force save to increment DateLastSaved
-                        ForceSave = true
-                    },
-                    RefreshPriority.Normal);
-            }
-
-            return item;
-        }
-
-        public UserView GetNamedView(
-            string name,
-            Guid parentId,
-            string viewType,
-            string sortName,
-            string uniqueId)
-        {
-            ArgumentException.ThrowIfNullOrEmpty(name);
-
-            var parentIdString = parentId.Equals(Guid.Empty)
-                ? null
-                : parentId.ToString("N", CultureInfo.InvariantCulture);
-            var idValues = "37_namedview_" + name + (parentIdString ?? string.Empty) + (viewType ?? string.Empty);
-            if (!string.IsNullOrEmpty(uniqueId))
-            {
-                idValues += uniqueId;
-            }
-
-            var id = GetNewItemId(idValues, typeof(UserView));
-
-            var path = Path.Combine(_configurationManager.ApplicationPaths.InternalMetadataPath, "views", id.ToString("N", CultureInfo.InvariantCulture));
-
-            var item = GetItemById(id) as UserView;
-
-            var isNew = false;
-
-            if (item is null)
-            {
-                Directory.CreateDirectory(path);
-
-                item = new UserView
-                {
-                    Path = path,
-                    Id = id,
-                    DateCreated = DateTime.UtcNow,
-                    Name = name,
-                    ViewType = viewType,
-                    ForcedSortName = sortName
-                };
-
-                item.DisplayParentId = parentId;
-
-                _itemService.CreateItem(item, null);
-
-                isNew = true;
-            }
-
-            if (!string.Equals(viewType, item.ViewType, StringComparison.OrdinalIgnoreCase))
-            {
-                item.ViewType = viewType;
-                item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-            }
-
-            var refresh = isNew || DateTime.UtcNow - item.DateLastRefreshed >= _viewRefreshInterval;
-
-            if (!refresh && !item.DisplayParentId.Equals(Guid.Empty))
-            {
-                var displayParent = GetItemById(item.DisplayParentId);
-                refresh = displayParent is not null && displayParent.DateLastSaved > item.DateLastRefreshed;
-            }
-
-            if (refresh)
-            {
-                ProviderManager.QueueRefresh(
-                    item.Id,
-                    new MetadataRefreshOptions(new DirectoryService(_fileSystem))
-                    {
-                        // Need to force save to increment DateLastSaved
-                        ForceSave = true
-                    },
-                    RefreshPriority.Normal);
-            }
-
-            return item;
-        }
-
-        public UserView GetShadowView(
-            BaseItem parent,
-            string viewType,
-            string sortName)
-        {
-            ArgumentNullException.ThrowIfNull(parent);
-
-            var name = parent.Name;
-            var parentId = parent.Id;
-
-            var idValues = "38_namedview_" + name + parentId + (viewType ?? string.Empty);
-
-            var id = GetNewItemId(idValues, typeof(UserView));
-
-            var path = parent.Path;
-
-            var item = GetItemById(id) as UserView;
-
-            var isNew = false;
-
-            if (item is null)
-            {
-                Directory.CreateDirectory(path);
-
-                item = new UserView
-                {
-                    Path = path,
-                    Id = id,
-                    DateCreated = DateTime.UtcNow,
-                    Name = name,
-                    ViewType = viewType,
-                    ForcedSortName = sortName
-                };
-
-                item.DisplayParentId = parentId;
-
-                _itemService.CreateItem(item, null);
-
-                isNew = true;
-            }
-
-            var refresh = isNew || DateTime.UtcNow - item.DateLastRefreshed >= _viewRefreshInterval;
-
-            if (!refresh && !item.DisplayParentId.Equals(Guid.Empty))
-            {
-                var displayParent = GetItemById(item.DisplayParentId);
-                refresh = displayParent is not null && displayParent.DateLastSaved > item.DateLastRefreshed;
-            }
-
-            if (refresh)
-            {
-                ProviderManager.QueueRefresh(
-                    item.Id,
-                    new MetadataRefreshOptions(new DirectoryService(_fileSystem))
-                    {
-                        // Need to force save to increment DateLastSaved
-                        ForceSave = true
-                    },
-                    RefreshPriority.Normal);
-            }
-
-            return item;
-        }
-
         public BaseItem GetParentItem(Guid? parentId, Guid? userId)
         {
             if (parentId.HasValue)
@@ -1511,61 +1192,6 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
-        public string GetPathAfterNetworkSubstitution(string path, BaseItem ownerItem)
-        {
-            string newPath;
-            if (ownerItem is not null)
-            {
-                var libraryOptions = _libraryOptionsManager.GetLibraryOptions(ownerItem);
-                if (libraryOptions is not null)
-                {
-                    foreach (var pathInfo in libraryOptions.PathInfos)
-                    {
-                        if (path.TryReplaceSubPath(pathInfo.Path, pathInfo.NetworkPath, out newPath))
-                        {
-                            return newPath;
-                        }
-                    }
-                }
-            }
-
-            var metadataPath = _configurationManager.Configuration.MetadataPath;
-            var metadataNetworkPath = _configurationManager.Configuration.MetadataNetworkPath;
-
-            if (path.TryReplaceSubPath(metadataPath, metadataNetworkPath, out newPath))
-            {
-                return newPath;
-            }
-
-            foreach (var map in _configurationManager.Configuration.PathSubstitutions)
-            {
-                if (path.TryReplaceSubPath(map.From, map.To, out newPath))
-                {
-                    return newPath;
-                }
-            }
-
-            return path;
-        }
-
-        public List<PersonInfo> GetPeople(BaseItem item)
-        {
-            if (item.SupportsPeople)
-            {
-                var people = _itemService.GetPeople(new InternalPeopleQuery
-                {
-                    ItemId = item.Id
-                });
-
-                if (people.Count > 0)
-                {
-                    return people;
-                }
-            }
-
-            return new List<PersonInfo>();
-        }
-
         public List<Person> GetPeopleItems(InternalPeopleQuery query)
         {
             return _itemService.GetPeopleNames(query)
@@ -1573,7 +1199,7 @@ namespace Emby.Server.Implementations.Library
             {
                 try
                 {
-                    return GetPerson(i);
+                    return _itemService.GetPerson(i);
                 }
                 catch (Exception ex)
                 {
@@ -1720,7 +1346,7 @@ namespace Emby.Server.Implementations.Library
 
                 var itemUpdateType = ItemUpdateType.MetadataDownload;
                 var saveEntity = false;
-                var personEntity = GetPerson(person.Name);
+                var personEntity = _itemService.GetPerson(person.Name);
 
                 // if PresentationUniqueKey is empty it's likely a new item.
                 if (string.IsNullOrEmpty(personEntity.PresentationUniqueKey))

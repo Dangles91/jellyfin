@@ -27,6 +27,7 @@ public class StudiosController : BaseJellyfinApiController
     private readonly IUserManager _userManager;
     private readonly IDtoService _dtoService;
     private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StudiosController"/> class.
@@ -35,16 +36,19 @@ public class StudiosController : BaseJellyfinApiController
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public StudiosController(
         ILibraryManager libraryManager,
         IUserManager userManager,
         IDtoService dtoService,
-        IItemService itemService)
+        IItemService itemService,
+        IItemQueryService itemQueryService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _dtoService = dtoService;
         _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -128,7 +132,7 @@ public class StudiosController : BaseJellyfinApiController
             }
         }
 
-        var result = _itemService.GetStudios(query);
+        var result = _itemQueryService.GetStudios(query);
         var shouldIncludeItemTypes = includeItemTypes.Length != 0;
         return RequestHelpers.CreateQueryResult(result, dtoOptions, _dtoService, shouldIncludeItemTypes, user);
     }

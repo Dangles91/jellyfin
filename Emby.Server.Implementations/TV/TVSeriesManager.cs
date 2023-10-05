@@ -22,6 +22,7 @@ namespace Emby.Server.Implementations.TV
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _configurationManager;
+        private readonly IItemQueryService _itemQueryService;
         private readonly IItemService _itemService;
 
         public TVSeriesManager(
@@ -29,12 +30,14 @@ namespace Emby.Server.Implementations.TV
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
             IServerConfigurationManager configurationManager,
+            IItemQueryService itemQueryService,
             IItemService itemService)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _configurationManager = configurationManager;
+            _itemQueryService = itemQueryService;
             _itemService = itemService;
         }
 
@@ -50,7 +53,7 @@ namespace Emby.Server.Implementations.TV
             string? presentationUniqueKey = null;
             if (query.SeriesId.HasValue && !query.SeriesId.Value.Equals(default))
             {
-                if (_libraryManager.GetItemById(query.SeriesId.Value) is Series series)
+                if (_itemService.GetItemById(query.SeriesId.Value) is Series series)
                 {
                     presentationUniqueKey = GetUniqueSeriesKey(series);
                 }
@@ -65,7 +68,7 @@ namespace Emby.Server.Implementations.TV
 
             if (query.ParentId.HasValue)
             {
-                var parent = _libraryManager.GetItemById(query.ParentId.Value);
+                var parent = _itemService.GetItemById(query.ParentId.Value);
 
                 if (parent is not null)
                 {
@@ -100,7 +103,7 @@ namespace Emby.Server.Implementations.TV
             int? limit = null;
             if (request.SeriesId.HasValue && !request.SeriesId.Value.Equals(default))
             {
-                if (_libraryManager.GetItemById(request.SeriesId.Value) is Series series)
+                if (_itemService.GetItemById(request.SeriesId.Value) is Series series)
                 {
                     presentationUniqueKey = GetUniqueSeriesKey(series);
                     limit = 1;
@@ -117,7 +120,7 @@ namespace Emby.Server.Implementations.TV
                 limit = limit.Value + 10;
             }
 
-            var items = _itemService
+            var items = _itemQueryService
                 .GetItemList(
                     new InternalItemsQuery(user)
                     {
@@ -212,7 +215,7 @@ namespace Emby.Server.Implementations.TV
                 ? new[] { (ItemSortBy.DatePlayed, SortOrder.Descending), (ItemSortBy.ParentIndexNumber, SortOrder.Descending), (ItemSortBy.IndexNumber, SortOrder.Descending) }
                 : new[] { (ItemSortBy.ParentIndexNumber, SortOrder.Descending), (ItemSortBy.IndexNumber, SortOrder.Descending) };
 
-            var lastWatchedEpisode = _itemService.GetItemList(lastQuery).Cast<Episode>().FirstOrDefault();
+            var lastWatchedEpisode = _itemQueryService.GetItemList(lastQuery).Cast<Episode>().FirstOrDefault();
 
             Episode? GetEpisode()
             {
@@ -237,11 +240,11 @@ namespace Emby.Server.Implementations.TV
                     nextQuery.MinParentAndIndexNumber = (lastWatchedParentIndexNumber.Value, lastWatchedIndexNumber.Value + 1);
                 }
 
-                var nextEpisode = _itemService.GetItemList(nextQuery).Cast<Episode>().FirstOrDefault();
+                var nextEpisode = _itemQueryService.GetItemList(nextQuery).Cast<Episode>().FirstOrDefault();
 
                 if (_configurationManager.Configuration.DisplaySpecialsWithinSeasons)
                 {
-                    var consideredEpisodes = _itemService.GetItemList(new InternalItemsQuery(user)
+                    var consideredEpisodes = _itemQueryService.GetItemList(new InternalItemsQuery(user)
                     {
                         AncestorWithPresentationUniqueKey = null,
                         SeriesPresentationUniqueKey = seriesKey,

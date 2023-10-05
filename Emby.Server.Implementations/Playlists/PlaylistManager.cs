@@ -85,7 +85,7 @@ namespace Emby.Server.Implementations.Playlists
             {
                 foreach (var itemId in options.ItemIdList)
                 {
-                    var item = _libraryManager.GetItemById(itemId);
+                    var item = _itemService.GetItemById(itemId);
                     if (item is null)
                     {
                         throw new ArgumentException("No item exists with the supplied Id");
@@ -177,7 +177,7 @@ namespace Emby.Server.Implementations.Playlists
 
         private List<BaseItem> GetPlaylistItems(IEnumerable<Guid> itemIds, string playlistMediaType, User user, DtoOptions options)
         {
-            var items = itemIds.Select(i => _libraryManager.GetItemById(i)).Where(i => i is not null);
+            var items = itemIds.Select(i => _itemService.GetItemById(i)).Where(i => i is not null);
 
             return Playlist.GetPlaylistItems(playlistMediaType, items, user, options);
         }
@@ -195,7 +195,7 @@ namespace Emby.Server.Implementations.Playlists
         private async Task AddToPlaylistInternal(Guid playlistId, IReadOnlyCollection<Guid> newItemIds, User user, DtoOptions options)
         {
             // Retrieve the existing playlist
-            var playlist = _libraryManager.GetItemById(playlistId) as Playlist
+            var playlist = _itemService.GetItemById(playlistId) as Playlist
                 ?? throw new ArgumentException("No Playlist exists with Id " + playlistId);
 
             // Retrieve all the items to be added to the playlist
@@ -256,7 +256,7 @@ namespace Emby.Server.Implementations.Playlists
 
         public async Task RemoveFromPlaylistAsync(string playlistId, IEnumerable<string> entryIds)
         {
-            if (_libraryManager.GetItemById(playlistId) is not Playlist playlist)
+            if (_itemService.GetItemById(new Guid(playlistId)) is not Playlist playlist)
             {
                 throw new ArgumentException("No Playlist exists with the supplied Id");
             }
@@ -289,7 +289,7 @@ namespace Emby.Server.Implementations.Playlists
 
         public async Task MoveItemAsync(string playlistId, string entryId, int newIndex)
         {
-            if (_libraryManager.GetItemById(playlistId) is not Playlist playlist)
+            if (_itemService.GetItemById(new Guid(playlistId)) is not Playlist playlist)
             {
                 throw new ArgumentException("No Playlist exists with the supplied Id");
             }

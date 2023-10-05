@@ -165,7 +165,7 @@ namespace MediaBrowser.Controller.Entities
             }
         }
 
-        public static ICollectionManager CollectionManager { get; set; }
+        public static Collections.ICollectionManager CollectionManager { get; set; }
 
         public override bool CanDelete()
         {
@@ -196,23 +196,6 @@ namespace MediaBrowser.Controller.Entities
         /// <exception cref="InvalidOperationException">Unable to add  + item.Name.</exception>
         public void AddChild(BaseItem item)
         {
-            item.SetParent(this);
-
-            if (item.Id.Equals(default))
-            {
-                item.Id = LibraryManager.GetNewItemId(item.Path, item.GetType());
-            }
-
-            if (item.DateCreated == DateTime.MinValue)
-            {
-                item.DateCreated = DateTime.UtcNow;
-            }
-
-            if (item.DateModified == DateTime.MinValue)
-            {
-                item.DateModified = DateTime.UtcNow;
-            }
-
             ItemService.CreateItem(item, this);
         }
 
@@ -631,7 +614,7 @@ namespace MediaBrowser.Controller.Entities
         /// <returns>IEnumerable{BaseItem}.</returns>
         protected List<BaseItem> GetCachedChildren()
         {
-            return ItemService.GetItemList(new InternalItemsQuery
+            return ItemQueryService.GetItemList(new InternalItemsQuery
             {
                 Parent = this,
                 GroupByPresentationUniqueKey = false,
@@ -712,7 +695,7 @@ namespace MediaBrowser.Controller.Entities
                 return QueryWithPostFiltering2(query);
             }
 
-            return ItemService.GetItemsResult(query);
+            return ItemQueryService.GetItemsResult(query);
         }
 
         protected QueryResult<BaseItem> QueryWithPostFiltering2(InternalItemsQuery query)
@@ -723,7 +706,7 @@ namespace MediaBrowser.Controller.Entities
             query.StartIndex = null;
             query.Limit = null;
 
-            IEnumerable<BaseItem> itemsList = ItemService.GetItemList(query);
+            IEnumerable<BaseItem> itemsList = ItemQueryService.GetItemList(query);
             var user = query.User;
 
             if (user is not null)
@@ -884,7 +867,7 @@ namespace MediaBrowser.Controller.Entities
         {
             if (query.ItemIds.Length > 0)
             {
-                var result = ItemService.GetItemsResult(query);
+                var result = ItemQueryService.GetItemsResult(query);
 
                 if (query.OrderBy.Count == 0 && query.ItemIds.Length > 1)
                 {
@@ -903,7 +886,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (query.ItemIds.Length > 0)
             {
-                var result = ItemService.GetItemList(query);
+                var result = ItemQueryService.GetItemList(query);
 
                 if (query.OrderBy.Count == 0 && query.ItemIds.Length > 1)
                 {
@@ -1006,7 +989,7 @@ namespace MediaBrowser.Controller.Entities
             BaseItem queryParent,
             User user,
             IServerConfigurationManager configurationManager,
-            ICollectionManager collectionManager)
+            Collections.ICollectionManager collectionManager)
         {
             ArgumentNullException.ThrowIfNull(items);
 

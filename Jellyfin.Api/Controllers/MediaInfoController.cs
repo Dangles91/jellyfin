@@ -29,7 +29,7 @@ public class MediaInfoController : BaseJellyfinApiController
 {
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IDeviceManager _deviceManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly ILogger<MediaInfoController> _logger;
     private readonly MediaInfoHelper _mediaInfoHelper;
 
@@ -38,19 +38,19 @@ public class MediaInfoController : BaseJellyfinApiController
     /// </summary>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{MediaInfoController}"/> interface.</param>
     /// <param name="mediaInfoHelper">Instance of the <see cref="MediaInfoHelper"/>.</param>
     public MediaInfoController(
         IMediaSourceManager mediaSourceManager,
         IDeviceManager deviceManager,
-        ILibraryManager libraryManager,
+        IItemService itemService,
         ILogger<MediaInfoController> logger,
         MediaInfoHelper mediaInfoHelper)
     {
         _mediaSourceManager = mediaSourceManager;
         _deviceManager = deviceManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _logger = logger;
         _mediaInfoHelper = mediaInfoHelper;
     }
@@ -162,7 +162,7 @@ public class MediaInfoController : BaseJellyfinApiController
         if (profile is not null)
         {
             // set device specific data
-            var item = _libraryManager.GetItemById(itemId);
+            var item = _itemService.GetItemById(itemId);
 
             foreach (var mediaSource in info.MediaSources)
             {

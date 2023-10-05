@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Configuration;
@@ -22,9 +23,9 @@ namespace MediaBrowser.Controller.Library
         /// </summary>
         private readonly IServerApplicationPaths _appPaths;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
-        private readonly IItemPathResolver _itemPathResolver;
         private readonly IItemContentTypeProvider _itemContentTypeProvider;
         private readonly IFileSystem _fileSystem;
+        private readonly IResolverIgnoreRulesProvider _resolverIgnoreRulesProvider;
         private LibraryOptions _libraryOptions;
 
         /// <summary>
@@ -32,21 +33,21 @@ namespace MediaBrowser.Controller.Library
         /// </summary>
         /// <param name="appPaths">The app paths.</param>
         /// <param name="libraryOptionsManager">The library options.</param>
-        /// <param name="itemPathResolver">The path resolver.</param>
         /// <param name="itemContentTypeProvider">The item content type provider.</param>
         /// <param name="fileSystem">The instance of <see cref="IFileSystem"/> interface.</param>
+        /// <param name="resolverIgnoreRulesProvider">The resolver ignore rules provider.</param>
         public ItemResolveArgs(
             IServerApplicationPaths appPaths,
             ILibraryOptionsManager libraryOptionsManager,
-            IItemPathResolver itemPathResolver,
             IItemContentTypeProvider itemContentTypeProvider,
-            IFileSystem fileSystem)
+            IFileSystem fileSystem,
+            IResolverIgnoreRulesProvider resolverIgnoreRulesProvider)
         {
             _appPaths = appPaths;
             _libraryOptionsManager = libraryOptionsManager;
-            _itemPathResolver = itemPathResolver;
             _itemContentTypeProvider = itemContentTypeProvider;
             _fileSystem = fileSystem;
+            _resolverIgnoreRulesProvider = resolverIgnoreRulesProvider;
         }
 
         /// <summary>
@@ -257,13 +258,18 @@ namespace MediaBrowser.Controller.Library
             for (var i = 0; i < numberOfChildren; i++)
             {
                 var child = FileSystemChildren[i];
-                if (_itemPathResolver.IgnoreFile(child, Parent))
+                if (_resolverIgnoreRulesProvider.IgnoreFile(child, Parent))
                 {
                     continue;
                 }
 
                 yield return child;
             }
+        }
+
+        public bool IgnoreFile(FileSystemMetadata child, BaseItem parent)
+        {
+            return _resolverIgnoreRulesProvider.IgnoreFile(child, parent);
         }
 
         /// <summary>

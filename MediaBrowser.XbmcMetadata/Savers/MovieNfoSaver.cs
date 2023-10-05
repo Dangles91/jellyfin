@@ -24,18 +24,20 @@ namespace MediaBrowser.XbmcMetadata.Savers
         /// </summary>
         /// <param name="fileSystem">The file system.</param>
         /// <param name="configurationManager">the server configuration manager.</param>
-        /// <param name="libraryManager">The library manager.</param>
+        /// <param name="itemService">The item service.</param>
+        /// <param name="itemPathResolver">The item path resolver.</param>
         /// <param name="userManager">The user manager.</param>
         /// <param name="userDataManager">The user data manager.</param>
         /// <param name="logger">The logger.</param>
         public MovieNfoSaver(
             IFileSystem fileSystem,
             IServerConfigurationManager configurationManager,
-            ILibraryManager libraryManager,
+            IItemService itemService,
+            IItemPathResolver itemPathResolver,
             IUserManager userManager,
             IUserDataManager userDataManager,
-            ILogger<MovieNfoSaver> logger)
-            : base(fileSystem, configurationManager, libraryManager, userManager, userDataManager, logger)
+            ILogger<ArtistNfoSaver> logger)
+            : base(fileSystem, configurationManager, itemService, itemPathResolver, userManager, userDataManager, logger)
         {
         }
 

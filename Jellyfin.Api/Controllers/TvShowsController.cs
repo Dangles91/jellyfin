@@ -29,31 +29,31 @@ namespace Jellyfin.Api.Controllers;
 public class TvShowsController : BaseJellyfinApiController
 {
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IDtoService _dtoService;
     private readonly ITVSeriesManager _tvSeriesManager;
-    private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TvShowsController"/> class.
     /// </summary>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="tvSeriesManager">Instance of the <see cref="ITVSeriesManager"/> interface.</param>
-    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public TvShowsController(
         IUserManager userManager,
-        ILibraryManager libraryManager,
+        IItemService itemService,
         IDtoService dtoService,
         ITVSeriesManager tvSeriesManager,
-        IItemService itemService)
+        IItemQueryService itemQueryService)
     {
         _userManager = userManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _dtoService = dtoService;
         _tvSeriesManager = tvSeriesManager;
-        _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ public class TvShowsController : BaseJellyfinApiController
             .AddClientFields(User)
             .AddAdditionalDtoOptions(enableImages, enableUserData, imageTypeLimit, enableImageTypes);
 
-        var itemsResult = _itemService.GetItemList(new InternalItemsQuery(user)
+        var itemsResult = _itemQueryService.GetItemList(new InternalItemsQuery(user)
         {
             IncludeItemTypes = new[] { BaseItemKind.Episode },
             OrderBy = new[] { (ItemSortBy.PremiereDate, SortOrder.Ascending), (ItemSortBy.SortName, SortOrder.Ascending) },
@@ -238,7 +238,7 @@ public class TvShowsController : BaseJellyfinApiController
 
         if (seasonId.HasValue) // Season id was supplied. Get episodes by season id.
         {
-            var item = _libraryManager.GetItemById(seasonId.Value);
+            var item = _itemService.GetItemById(seasonId.Value);
             if (item is not Season seasonItem)
             {
                 return NotFound("No season exists with Id " + seasonId);
@@ -248,7 +248,7 @@ public class TvShowsController : BaseJellyfinApiController
         }
         else if (season.HasValue) // Season number was supplied. Get episodes by season number
         {
-            if (_libraryManager.GetItemById(seriesId) is not Series series)
+            if (_itemService.GetItemById(seriesId) is not Series series)
             {
                 return NotFound("Series not found");
             }
@@ -263,7 +263,7 @@ public class TvShowsController : BaseJellyfinApiController
         }
         else // No season number or season id was supplied. Returning all episodes.
         {
-            if (_libraryManager.GetItemById(seriesId) is not Series series)
+            if (_itemService.GetItemById(seriesId) is not Series series)
             {
                 return NotFound("Series not found");
             }
@@ -347,7 +347,7 @@ public class TvShowsController : BaseJellyfinApiController
             ? null
             : _userManager.GetUserById(userId.Value);
 
-        if (_libraryManager.GetItemById(seriesId) is not Series series)
+        if (_itemService.GetItemById(seriesId) is not Series series)
         {
             return NotFound("Series not found");
         }

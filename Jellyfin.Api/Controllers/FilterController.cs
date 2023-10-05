@@ -24,6 +24,7 @@ public class FilterController : BaseJellyfinApiController
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IItemService _itemService;
+    private readonly IItemQueryService _itemQueryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FilterController"/> class.
@@ -31,14 +32,17 @@ public class FilterController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
     public FilterController(
         ILibraryManager libraryManager,
         IUserManager userManager,
-        IItemService itemService)
+        IItemService itemService,
+        IItemQueryService itemQueryService)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _itemService = itemService;
+        _itemQueryService = itemQueryService;
     }
 
     /// <summary>
@@ -167,7 +171,7 @@ public class FilterController : BaseJellyfinApiController
         }
         else if (parentId.HasValue)
         {
-            parentItem = _libraryManager.GetItemById(parentId.Value);
+            parentItem = _itemService.GetItemById(parentId.Value);
         }
 
         var filters = new QueryFilters();
@@ -203,7 +207,7 @@ public class FilterController : BaseJellyfinApiController
                 || includeItemTypes[0] == BaseItemKind.MusicArtist
                 || includeItemTypes[0] == BaseItemKind.Audio))
         {
-            filters.Genres = _itemService.GetMusicGenres(genreQuery).Items.Select(i => new NameGuidPair
+            filters.Genres = _itemQueryService.GetMusicGenres(genreQuery).Items.Select(i => new NameGuidPair
             {
                 Name = i.Item.Name,
                 Id = i.Item.Id
@@ -211,7 +215,7 @@ public class FilterController : BaseJellyfinApiController
         }
         else
         {
-            filters.Genres = _itemService.GetGenres(genreQuery).Items.Select(i => new NameGuidPair
+            filters.Genres = _itemQueryService.GetGenres(genreQuery).Items.Select(i => new NameGuidPair
             {
                 Name = i.Item.Name,
                 Id = i.Item.Id

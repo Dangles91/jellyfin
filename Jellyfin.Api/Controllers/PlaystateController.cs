@@ -27,8 +27,8 @@ public class PlaystateController : BaseJellyfinApiController
 {
     private readonly IUserManager _userManager;
     private readonly IUserDataManager _userDataRepository;
-    private readonly ILibraryManager _libraryManager;
     private readonly ISessionManager _sessionManager;
+    private readonly IItemService _itemService;
     private readonly ILogger<PlaystateController> _logger;
     private readonly TranscodingJobHelper _transcodingJobHelper;
 
@@ -37,22 +37,22 @@ public class PlaystateController : BaseJellyfinApiController
     /// </summary>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="userDataRepository">Instance of the <see cref="IUserDataManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
     /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="transcodingJobHelper">Th <see cref="TranscodingJobHelper"/> singleton.</param>
     public PlaystateController(
         IUserManager userManager,
         IUserDataManager userDataRepository,
-        ILibraryManager libraryManager,
         ISessionManager sessionManager,
         ILoggerFactory loggerFactory,
+        IItemService itemService,
         TranscodingJobHelper transcodingJobHelper)
     {
         _userManager = userManager;
         _userDataRepository = userDataRepository;
-        _libraryManager = libraryManager;
         _sessionManager = sessionManager;
+        _itemService = itemService;
         _logger = loggerFactory.CreateLogger<PlaystateController>();
 
         _transcodingJobHelper = transcodingJobHelper;
@@ -83,7 +83,7 @@ public class PlaystateController : BaseJellyfinApiController
 
         var session = await RequestHelpers.GetSession(_sessionManager, _userManager, HttpContext).ConfigureAwait(false);
 
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -124,7 +124,7 @@ public class PlaystateController : BaseJellyfinApiController
         }
 
         var session = await RequestHelpers.GetSession(_sessionManager, _userManager, HttpContext).ConfigureAwait(false);
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
 
         if (item is null)
         {

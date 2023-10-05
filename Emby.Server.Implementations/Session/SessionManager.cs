@@ -50,13 +50,13 @@ namespace Emby.Server.Implementations.Session
         private readonly IUserDataManager _userDataManager;
         private readonly ILogger<SessionManager> _logger;
         private readonly IEventManager _eventManager;
-        private readonly ILibraryManager _libraryManager;
         private readonly IUserManager _userManager;
+        private readonly IItemService _itemService;
         private readonly IMusicManager _musicManager;
         private readonly IDtoService _dtoService;
         private readonly IImageProcessor _imageProcessor;
         private readonly IMediaSourceManager _mediaSourceManager;
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
         private readonly IServerApplicationHost _appHost;
         private readonly IDeviceManager _deviceManager;
         private readonly CancellationTokenRegistration _shutdownCallback;
@@ -72,8 +72,8 @@ namespace Emby.Server.Implementations.Session
             ILogger<SessionManager> logger,
             IEventManager eventManager,
             IUserDataManager userDataManager,
-            ILibraryManager libraryManager,
             IUserManager userManager,
+            IItemService itemService,
             IMusicManager musicManager,
             IDtoService dtoService,
             IImageProcessor imageProcessor,
@@ -81,12 +81,13 @@ namespace Emby.Server.Implementations.Session
             IDeviceManager deviceManager,
             IMediaSourceManager mediaSourceManager,
             IHostApplicationLifetime hostApplicationLifetime)
+            IItemQueryService itemQueryService)
         {
             _logger = logger;
             _eventManager = eventManager;
             _userDataManager = userDataManager;
-            _libraryManager = libraryManager;
             _userManager = userManager;
+            _itemService = itemService;
             _musicManager = musicManager;
             _dtoService = dtoService;
             _imageProcessor = imageProcessor;
@@ -95,6 +96,7 @@ namespace Emby.Server.Implementations.Session
             _mediaSourceManager = mediaSourceManager;
             _shutdownCallback = hostApplicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
 
+            _itemQueryService = itemQueryService;
             _deviceManager.DeviceOptionsUpdated += OnDeviceManagerDeviceOptionsUpdated;
         }
 
@@ -391,7 +393,7 @@ namespace Emby.Server.Implementations.Session
 
                 var itemIds = nowPlayingQueue.Select(queue => queue.Id).ToArray();
                 session.NowPlayingQueueFullItems = _dtoService.GetBaseItemDtos(
-                    _itemService.GetItemList(new InternalItemsQuery { ItemIds = itemIds }),
+                    _itemQueryService.GetItemList(new InternalItemsQuery { ItemIds = itemIds }),
                     new DtoOptions(true));
             }
         }
@@ -601,7 +603,7 @@ namespace Emby.Server.Implementations.Session
                 return item;
             }
 
-            item = _libraryManager.GetItemById(itemId);
+            item = _itemService.GetItemById(itemId);
 
             session.FullNowPlayingItem = item;
 
@@ -1129,7 +1131,7 @@ namespace Emby.Server.Implementations.Session
             if (user is not null
                 && command.ItemIds.Length == 1
                 && user.EnableNextEpisodeAutoPlay
-                && _libraryManager.GetItemById(command.ItemIds[0]) is Episode episode)
+                && _itemService.GetItemById(command.ItemIds[0]) is Episode episode)
             {
                 var series = episode.Series;
                 if (series is not null)
@@ -1182,7 +1184,7 @@ namespace Emby.Server.Implementations.Session
 
         private IEnumerable<BaseItem> TranslateItemForPlayback(Guid id, User user)
         {
-            var item = _libraryManager.GetItemById(id);
+            var item = _itemService.GetItemById(id);
 
             if (item is null)
             {
@@ -1235,7 +1237,7 @@ namespace Emby.Server.Implementations.Session
 
         private IEnumerable<BaseItem> TranslateItemForInstantMix(Guid id, User user)
         {
-            var item = _libraryManager.GetItemById(id);
+            var item = _itemService.GetItemById(id);
 
             if (item is null)
             {
@@ -1654,7 +1656,7 @@ namespace Emby.Server.Implementations.Session
         {
             ArgumentException.ThrowIfNullOrEmpty(itemId);
 
-            var item = _libraryManager.GetItemById(new Guid(itemId));
+            var item = _itemService.GetItemById(new Guid(itemId));
             var session = GetSession(sessionId);
 
             session.NowViewingItem = GetItemInfo(item, null);

@@ -16,6 +16,10 @@ namespace Emby.Server.Implementations.IO
     /// </summary>
     public class ManagedFileSystem : IFileSystem
     {
+        private readonly ILogger<ManagedFileSystem> _logger;
+        private readonly IServerApplicationPaths _applicationPaths;
+        private readonly List<IShortcutHandler> _shortcutHandlers = new List<IShortcutHandler>();
+        private readonly string _tempPath;
         private static readonly bool _isEnvironmentCaseInsensitive = OperatingSystem.IsWindows();
         private static readonly char[] _invalidPathCharacters =
         {
@@ -43,7 +47,6 @@ namespace Emby.Server.Implementations.IO
         {
             _logger = logger;
             _applicationPaths = applicationPaths;
-            _serverApplicationPaths = serverApplicationPaths;
             _tempPath = applicationPaths.TempDirectory;
             _shortcutHandlers = shortcutHandlers.ToList();
         }
@@ -670,17 +673,19 @@ namespace Emby.Server.Implementations.IO
             };
         }
 
+        /// <inheritdoc/>
         public string ExpandVirtualPath(string path)
         {
-            var appPaths = _serverApplicationPaths;
+            var appPaths = _applicationPaths;
 
             return path.Replace(appPaths.VirtualDataPath, appPaths.DataPath, StringComparison.OrdinalIgnoreCase)
                 .Replace(appPaths.VirtualInternalMetadataPath, appPaths.InternalMetadataPath, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <inheritdoc/>
         public string ReverseVirtualPath(string path)
         {
-            var appPaths = _serverApplicationPaths;
+            var appPaths = _applicationPaths;
 
             return path.Replace(appPaths.DataPath, appPaths.VirtualDataPath, StringComparison.OrdinalIgnoreCase)
                 .Replace(appPaths.InternalMetadataPath, appPaths.VirtualInternalMetadataPath, StringComparison.OrdinalIgnoreCase);

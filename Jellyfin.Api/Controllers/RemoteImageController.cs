@@ -25,22 +25,22 @@ public class RemoteImageController : BaseJellyfinApiController
 {
     private readonly IProviderManager _providerManager;
     private readonly IServerApplicationPaths _applicationPaths;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteImageController"/> class.
     /// </summary>
     /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
     /// <param name="applicationPaths">Instance of the <see cref="IServerApplicationPaths"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public RemoteImageController(
         IProviderManager providerManager,
         IServerApplicationPaths applicationPaths,
-        ILibraryManager libraryManager)
+        IItemService itemService)
     {
         _providerManager = providerManager;
         _applicationPaths = applicationPaths;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public class RemoteImageController : BaseJellyfinApiController
         [FromQuery] string? providerName,
         [FromQuery] bool includeAllLanguages = false)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -126,7 +126,7 @@ public class RemoteImageController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<IEnumerable<ImageProviderInfo>> GetRemoteImageProviders([FromRoute, Required] Guid itemId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -153,7 +153,7 @@ public class RemoteImageController : BaseJellyfinApiController
         [FromQuery, Required] ImageType type,
         [FromQuery] string? imageUrl)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();

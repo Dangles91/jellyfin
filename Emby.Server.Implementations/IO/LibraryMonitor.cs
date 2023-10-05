@@ -18,12 +18,10 @@ namespace Emby.Server.Implementations.IO
     public class LibraryMonitor : ILibraryMonitor
     {
         private readonly ILogger<LibraryMonitor> _logger;
-        private readonly ILibraryManager _libraryManager;
-        private readonly IServerConfigurationManager _configurationManager;
         private readonly IFileSystem _fileSystem;
-        private readonly IItemService _itemService;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly FileRefresherFactory _fileRefresherFactory;
 
         /// <summary>
         /// The file system watchers.
@@ -46,28 +44,22 @@ namespace Emby.Server.Implementations.IO
         /// Initializes a new instance of the <see cref="LibraryMonitor" /> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        /// <param name="libraryManager">The library manager.</param>
-        /// <param name="configurationManager">The configuration manager.</param>
         /// <param name="fileSystem">The filesystem.</param>
-        /// <param name="itemService">The item service.</param>
         /// <param name="libraryRootFolderManager">The root folder manager.</param>
         /// <param name="libraryOptionsManager">The library options manager.</param>
+        /// <param name="fileRefresherFactory">the factory.</param>
         public LibraryMonitor(
             ILogger<LibraryMonitor> logger,
-            ILibraryManager libraryManager,
-            IServerConfigurationManager configurationManager,
             IFileSystem fileSystem,
-            IItemService itemService,
             ILibraryRootFolderManager libraryRootFolderManager,
-            ILibraryOptionsManager libraryOptionsManager)
+            ILibraryOptionsManager libraryOptionsManager,
+            FileRefresherFactory fileRefresherFactory)
         {
-            _libraryManager = libraryManager;
             _logger = logger;
-            _configurationManager = configurationManager;
             _fileSystem = fileSystem;
-            _itemService = itemService;
             _libraryRootFolderManager = libraryRootFolderManager;
             _libraryOptionsManager = libraryOptionsManager;
+            _fileRefresherFactory = fileRefresherFactory;
         }
 
         /// <summary>
@@ -129,9 +121,6 @@ namespace Emby.Server.Implementations.IO
 
         public void Start()
         {
-            _itemService.ItemAdded += OnItemServiceItemAdded;
-            _itemService.ItemRemoved += OnItemServiceItemRemoved;
-
             var pathsToWatch = new List<string>();
 
             var paths = _libraryRootFolderManager
@@ -433,7 +422,7 @@ namespace Emby.Server.Implementations.IO
                     }
                 }
 
-                var newRefresher = new FileRefresher(path, _configurationManager, _logger, _itemService);
+                var newRefresher = _fileRefresherFactory.Create(path);
                 newRefresher.Completed += OnNewRefresherCompleted;
                 _activeRefreshers.Add(newRefresher);
             }
@@ -455,9 +444,6 @@ namespace Emby.Server.Implementations.IO
         /// </summary>
         public void Stop()
         {
-            _itemService.ItemAdded -= OnItemServiceItemAdded;
-            _itemService.ItemRemoved -= OnItemServiceItemRemoved;
-
             foreach (var watcher in _fileSystemWatchers.Values.ToList())
             {
                 DisposeWatcher(watcher, false);

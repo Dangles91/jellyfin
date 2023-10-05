@@ -51,6 +51,7 @@ namespace Emby.Server.Implementations.Channels
         private readonly IProviderManager _providerManager;
         private readonly IMemoryCache _memoryCache;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly SemaphoreSlim _resourcePool = new SemaphoreSlim(1, 1);
         private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
@@ -70,6 +71,7 @@ namespace Emby.Server.Implementations.Channels
         /// <param name="memoryCache">The memory cache.</param>
         /// <param name="channels">The channels.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
+        /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> interface.</param>
         /// <param name="libraryItemIdGenerator">The instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
         public ChannelManager(
             IUserManager userManager,
@@ -83,6 +85,7 @@ namespace Emby.Server.Implementations.Channels
             IMemoryCache memoryCache,
             IEnumerable<IChannel> channels,
             IItemService itemService,
+            IItemQueryService itemQueryService,
             ILibraryItemIdGenerator libraryItemIdGenerator)
         {
             _userManager = userManager;
@@ -95,6 +98,7 @@ namespace Emby.Server.Implementations.Channels
             _providerManager = providerManager;
             _memoryCache = memoryCache;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
             _libraryItemIdGenerator = libraryItemIdGenerator;
             Channels = channels.ToArray();
 
@@ -549,7 +553,7 @@ namespace Emby.Server.Implementations.Channels
         /// <inheritdoc />
         public ChannelFeatures[] GetAllChannelFeatures()
         {
-            return _itemService.GetItemIds(
+            return _itemQueryService.GetItemIds(
                 new InternalItemsQuery
                 {
                     IncludeItemTypes = new[] { BaseItemKind.Channel },
@@ -683,7 +687,7 @@ namespace Emby.Server.Implementations.Channels
                 };
             }
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         private async Task RefreshLatestChannelItems(IChannel channel, CancellationToken cancellationToken)
@@ -764,7 +768,7 @@ namespace Emby.Server.Implementations.Channels
                         cancellationToken).ConfigureAwait(false)).Id;
                 }
 
-                var existingIds = _itemService.GetItemIds(query);
+                var existingIds = _itemQueryService.GetItemIds(query);
                 var deadIds = existingIds.Except(internalItems)
                     .ToArray();
 
@@ -785,7 +789,7 @@ namespace Emby.Server.Implementations.Channels
                 }
             }
 
-            return _itemService.GetItemsResult(query);
+            return _itemQueryService.GetItemsResult(query);
         }
 
         /// <inheritdoc />

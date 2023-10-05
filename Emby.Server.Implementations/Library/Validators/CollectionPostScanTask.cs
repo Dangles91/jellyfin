@@ -19,36 +19,32 @@ namespace Emby.Server.Implementations.Library.Validators
     /// </summary>
     public class CollectionPostScanTask : ILibraryPostScanTask
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly ICollectionManager _collectionManager;
         private readonly ILogger<CollectionPostScanTask> _logger;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
-        private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CollectionPostScanTask" /> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="collectionManager">The collection manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="libraryRootFolderManager"></param>
-        /// <param name="libraryOptionsManager"></param>
-        /// <param name="itemService"></param>
+        /// <param name="libraryRootFolderManager">The library root folder manager.</param>
+        /// <param name="libraryOptionsManager">The library options manager.</param>
+        /// <param name="itemQueryService">The item query service.</param>
         public CollectionPostScanTask(
-            ILibraryManager libraryManager,
             ICollectionManager collectionManager,
             ILogger<CollectionPostScanTask> logger,
             ILibraryRootFolderManager libraryRootFolderManager,
             ILibraryOptionsManager libraryOptionsManager,
-            IItemService itemService)
+            IItemQueryService itemQueryService)
         {
-            _libraryManager = libraryManager;
             _collectionManager = collectionManager;
             _logger = logger;
             _libraryRootFolderManager = libraryRootFolderManager;
             _libraryOptionsManager = libraryOptionsManager;
-            _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -73,7 +69,7 @@ namespace Emby.Server.Implementations.Library.Validators
 
                 while (true)
                 {
-                    var movies = _itemService.GetItemList(new InternalItemsQuery
+                    var movies = _itemQueryService.GetItemList(new InternalItemsQuery
                     {
                         MediaTypes = new string[] { MediaType.Video },
                         IncludeItemTypes = new[] { BaseItemKind.Movie },
@@ -118,7 +114,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 return;
             }
 
-            var boxSets = _itemService.GetItemList(new InternalItemsQuery
+            var boxSets = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.BoxSet },
                 CollapseBoxSetItems = false,

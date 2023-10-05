@@ -17,6 +17,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.Library
 {
+    /// <summary>
+    /// Resolve item paths.
+    /// </summary>
     public class ItemPathResolver : IItemPathResolver
     {
         private readonly IFileSystem _fileSystem;
@@ -24,19 +27,33 @@ namespace Emby.Server.Implementations.Library
         private readonly ILogger<ItemPathResolver> _logger;
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IItemResolveArgsFactory _itemResolveArgsFactory;
+        private readonly IResolverIgnoreRulesProvider _ignoreRulesProvider;
         private readonly IItemContentTypeProvider _itemContentTypeProvider;
         private readonly DirectoryService _directoryService;
 
         private IItemResolver[] _itemResolvers;
         private IMultiItemResolver[] _multiItemResolvers;
-        private IResolverIgnoreRule[] _resolverIgnoreRules;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemPathResolver"/> class.
+        /// </summary>
+        /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
+        /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
+        /// <param name="logger">Instance of <see cref="ILogger{ItemPathResolver}"/> interface.</param>
+        /// <param name="libraryItemIdGenerator">Instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
+        /// <param name="libraryOptionsManager">Instance of <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="itemResolveArgsFactory">The factory for creating resolve args.</param>
+        /// <param name="ignoreRulesProvider">Provider of ignore rules.</param>
+        /// <param name="itemContentTypeProvider">Instance of <see cref="IItemContentTypeProvider"/> interface.</param>
         public ItemPathResolver(
             IFileSystem fileSystem,
             IServerConfigurationManager serverConfigurationManager,
             ILogger<ItemPathResolver> logger,
             ILibraryItemIdGenerator libraryItemIdGenerator,
             ILibraryOptionsManager libraryOptionsManager,
+            IItemResolveArgsFactory itemResolveArgsFactory,
+            IResolverIgnoreRulesProvider ignoreRulesProvider,
             IItemContentTypeProvider itemContentTypeProvider)
         {
             _fileSystem = fileSystem;
@@ -44,28 +61,28 @@ namespace Emby.Server.Implementations.Library
             _logger = logger;
             _libraryItemIdGenerator = libraryItemIdGenerator;
             _libraryOptionsManager = libraryOptionsManager;
+            _itemResolveArgsFactory = itemResolveArgsFactory;
+            _ignoreRulesProvider = ignoreRulesProvider;
             _itemContentTypeProvider = itemContentTypeProvider;
             _directoryService = new(fileSystem);
 
             _itemResolvers = Array.Empty<IItemResolver>();
-            _resolverIgnoreRules = Array.Empty<IResolverIgnoreRule>();
             _multiItemResolvers = Array.Empty<IMultiItemResolver>();
         }
 
         /// <inheritdoc/>
         public void AddParts(
-           IEnumerable<IItemResolver> itemResolvers,
-           IEnumerable<IResolverIgnoreRule> rules)
+           IEnumerable<IItemResolver> itemResolvers)
         {
             _itemResolvers = itemResolvers.ToArray();
             _multiItemResolvers = _itemResolvers.OfType<IMultiItemResolver>().ToArray();
-            _resolverIgnoreRules = rules.ToArray();
         }
 
         /// <inheritdoc/>
         public BaseItem? ResolvePath(FileSystemMetadata fileInfo, Folder? parent = null)
             => ResolvePath(fileInfo, parent);
 
+        /// <inheritdoc/>
         public BaseItem? ResolvePath(
             FileSystemMetadata fileInfo,
             IItemResolver[] resolvers,
@@ -82,16 +99,14 @@ namespace Emby.Server.Implementations.Library
                 collectionType = _itemContentTypeProvider.GetContentTypeOverride(fullPath, true);
             }
 
-            var args = new ItemResolveArgs(_serverConfigurationManager.ApplicationPaths, _libraryOptionsManager, this, _itemContentTypeProvider, _fileSystem)
-            {
-                Parent = parent,
-                FileInfo = fileInfo,
-                CollectionType = collectionType,
-                LibraryOptions = libraryOptions
-            };
+            var args = _itemResolveArgsFactory.Create(
+                parent,
+                fileInfo,
+                collectionType,
+                libraryOptions);
 
             // Return null if ignore rules deem that we should do so
-            if (IgnoreFile(args.FileInfo, args.Parent!))
+            if (args.IgnoreFile(args.FileInfo, args.Parent!))
             {
                 return null;
             }
@@ -144,6 +159,7 @@ namespace Emby.Server.Implementations.Library
             return ResolveItem(args);
         }
 
+        /// <inheritdoc/>
         public List<FileSystemMetadata> NormalizeRootPathList(IEnumerable<FileSystemMetadata> paths)
         {
             var originalList = paths.ToList();
@@ -166,13 +182,14 @@ namespace Emby.Server.Implementations.Library
             return newList;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<BaseItem> ResolvePaths(
             IEnumerable<FileSystemMetadata> files,
             Folder? parent,
             LibraryOptions libraryOptions,
             string? collectionType = null)
         {
-            var fileList = files.Where(i => !IgnoreFile(i, parent!)).ToList();
+            var fileList = files.Where(i => !_ignoreRulesProvider.IgnoreFile(i, parent!)).ToList();
 
             if (parent is not null)
             {
@@ -203,9 +220,6 @@ namespace Emby.Server.Implementations.Library
             // Ignore any folders containing a file called .ignore
             return !args.ContainsFileSystemEntryByName(".ignore");
         }
-
-        public bool IgnoreFile(FileSystemMetadata file, BaseItem parent)
-            => _resolverIgnoreRules.Any(r => r.ShouldIgnore(file, parent));
 
         private IEnumerable<BaseItem> ResolveFileList(
             IReadOnlyList<FileSystemMetadata> fileList,
@@ -384,7 +398,7 @@ namespace Emby.Server.Implementations.Library
 
         private void SetDateCreated(BaseItem item, FileSystemMetadata? info)
         {
-            var config  = _serverConfigurationManager.GetMetadataConfiguration();
+            var config = _serverConfigurationManager.GetMetadataConfiguration();
 
             if (config.UseFileCreationTimeForDateAdded)
             {
@@ -405,6 +419,44 @@ namespace Emby.Server.Implementations.Library
             {
                 item.DateCreated = DateTime.UtcNow;
             }
+        }
+
+        /// <inheritdoc/>
+        public string GetPathAfterNetworkSubstitution(string path, BaseItem? ownerItem = null)
+        {
+            string newPath;
+            if (ownerItem is not null)
+            {
+                var libraryOptions = _libraryOptionsManager.GetLibraryOptions(ownerItem);
+                if (libraryOptions is not null)
+                {
+                    foreach (var pathInfo in libraryOptions.PathInfos)
+                    {
+                        if (path.TryReplaceSubPath(pathInfo.Path, pathInfo.NetworkPath, out newPath!))
+                        {
+                            return newPath;
+                        }
+                    }
+                }
+            }
+
+            var metadataPath = _serverConfigurationManager.Configuration.MetadataPath;
+            var metadataNetworkPath = _serverConfigurationManager.Configuration.MetadataNetworkPath;
+
+            if (path.TryReplaceSubPath(metadataPath, metadataNetworkPath, out newPath!))
+            {
+                return newPath;
+            }
+
+            foreach (var map in _serverConfigurationManager.Configuration.PathSubstitutions)
+            {
+                if (path.TryReplaceSubPath(map.From, map.To, out newPath!))
+                {
+                    return newPath;
+                }
+            }
+
+            return path;
         }
     }
 }

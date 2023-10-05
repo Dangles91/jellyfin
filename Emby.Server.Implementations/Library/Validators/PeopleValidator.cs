@@ -17,31 +17,31 @@ namespace Emby.Server.Implementations.Library.Validators
     public class PeopleValidator
     {
         /// <summary>
-        /// The _library manager.
-        /// </summary>
-        private readonly ILibraryManager _libraryManager;
-
-        /// <summary>
         /// The _logger.
         /// </summary>
         private readonly ILogger _logger;
 
         private readonly IFileSystem _fileSystem;
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PeopleValidator" /> class.
         /// </summary>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="fileSystem">The file system.</param>
         /// <param name="itemService">The item service.</param>
-        public PeopleValidator(ILibraryManager libraryManager, ILogger logger, IFileSystem fileSystem, IItemService itemService)
+        /// <param name="itemQueryService">The item query service.</param>
+        public PeopleValidator(
+            ILogger logger,
+            IFileSystem fileSystem,
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
-            _libraryManager = libraryManager;
             _logger = logger;
             _fileSystem = fileSystem;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Emby.Server.Implementations.Library.Validators
 
                 try
                 {
-                    var item = _libraryManager.GetPerson(person);
+                    var item = _itemService.GetPerson(person);
 
                     var options = new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                     {
@@ -93,7 +93,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(100 * percent);
             }
 
-            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Person },
                 IsDeadPerson = true,

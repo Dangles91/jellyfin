@@ -16,6 +16,7 @@ namespace Emby.Server.Implementations.Library.Validators
     public class StudiosValidator
     {
         private readonly IItemService _itemService;
+        private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
         /// The logger.
@@ -27,12 +28,15 @@ namespace Emby.Server.Implementations.Library.Validators
         /// </summary>
         /// <param name="logger">The logger.</param>
         /// <param name="itemService">The item repository.</param>
+        /// <param name="itemQueryService">The item query service.</param>
         public StudiosValidator(
             ILogger<StudiosValidator> logger,
-            IItemService itemService)
+            IItemService itemService,
+            IItemQueryService itemQueryService)
         {
             _logger = logger;
             _itemService = itemService;
+            _itemQueryService = itemQueryService;
         }
 
         /// <summary>
@@ -74,7 +78,7 @@ namespace Emby.Server.Implementations.Library.Validators
                 progress.Report(percent);
             }
 
-            var deadEntities = _itemService.GetItemList(new InternalItemsQuery
+            var deadEntities = _itemQueryService.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = new[] { BaseItemKind.Studio },
                 IsDeadStudio = true,

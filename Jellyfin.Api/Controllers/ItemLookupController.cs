@@ -28,7 +28,7 @@ public class ItemLookupController : BaseJellyfinApiController
 {
     private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly ILogger<ItemLookupController> _logger;
 
     /// <summary>
@@ -36,17 +36,17 @@ public class ItemLookupController : BaseJellyfinApiController
     /// </summary>
     /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{ItemLookupController}"/> interface.</param>
     public ItemLookupController(
         IProviderManager providerManager,
         IFileSystem fileSystem,
-        ILibraryManager libraryManager,
+        IItemService itemService,
         ILogger<ItemLookupController> logger)
     {
         _providerManager = providerManager;
         _fileSystem = fileSystem;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _logger = logger;
     }
 
@@ -63,7 +63,7 @@ public class ItemLookupController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<IEnumerable<ExternalIdInfo>> GetExternalIdInfos([FromRoute, Required] Guid itemId)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         if (item is null)
         {
             return NotFound();
@@ -245,7 +245,7 @@ public class ItemLookupController : BaseJellyfinApiController
         [FromBody, Required] RemoteSearchResult searchResult,
         [FromQuery] bool replaceAllImages = true)
     {
-        var item = _libraryManager.GetItemById(itemId);
+        var item = _itemService.GetItemById(itemId);
         _logger.LogInformation(
             "Setting provider id's to item {ItemId}-{ItemName}: {@ProviderIds}",
             item.Id,

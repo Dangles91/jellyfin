@@ -38,7 +38,6 @@ namespace Jellyfin.Api.Controllers;
 /// </summary>
 public class VideosController : BaseJellyfinApiController
 {
-    private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IDtoService _dtoService;
     private readonly IDlnaManager _dlnaManager;
@@ -50,12 +49,12 @@ public class VideosController : BaseJellyfinApiController
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EncodingHelper _encodingHelper;
     private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+    private readonly IItemService _itemService;
     private readonly TranscodingJobType _transcodingJobType = TranscodingJobType.Progressive;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VideosController"/> class.
     /// </summary>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
@@ -67,8 +66,8 @@ public class VideosController : BaseJellyfinApiController
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
     /// <param name="libraryRootFolderManager">Instance of <see cref="ILibraryRootFolderManager"/> interface.</param>
+    /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     public VideosController(
-        ILibraryManager libraryManager,
         IUserManager userManager,
         IDtoService dtoService,
         IDlnaManager dlnaManager,
@@ -79,9 +78,9 @@ public class VideosController : BaseJellyfinApiController
         TranscodingJobHelper transcodingJobHelper,
         IHttpClientFactory httpClientFactory,
         EncodingHelper encodingHelper,
-        ILibraryRootFolderManager libraryRootFolderManager)
+        ILibraryRootFolderManager libraryRootFolderManager,
+        IItemService itemService)
     {
-        _libraryManager = libraryManager;
         _userManager = userManager;
         _dtoService = dtoService;
         _dlnaManager = dlnaManager;
@@ -93,6 +92,7 @@ public class VideosController : BaseJellyfinApiController
         _httpClientFactory = httpClientFactory;
         _encodingHelper = encodingHelper;
         _libraryRootFolderManager = libraryRootFolderManager;
+        _itemService = itemService;
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class VideosController : BaseJellyfinApiController
             ? (userId.Value.Equals(default)
                 ? _libraryRootFolderManager.GetRootFolder()
                 : _libraryRootFolderManager.GetUserRootFolder())
-            : _libraryManager.GetItemById(itemId);
+            : _itemService.GetItemById(itemId);
 
         var dtoOptions = new DtoOptions();
         dtoOptions = dtoOptions.AddClientFields(User);
@@ -150,7 +150,7 @@ public class VideosController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteAlternateSources([FromRoute, Required] Guid itemId)
     {
-        var video = (Video)_libraryManager.GetItemById(itemId);
+        var video = (Video)_itemService.GetItemById(itemId);
 
         if (video is null)
         {
@@ -159,7 +159,7 @@ public class VideosController : BaseJellyfinApiController
 
         if (video.LinkedAlternateVersions.Length == 0)
         {
-            video = (Video?)_libraryManager.GetItemById(video.PrimaryVersionId);
+            video = (Video?)_itemService.GetItemById(new Guid(video.PrimaryVersionId));
         }
 
         if (video is null)
@@ -196,7 +196,7 @@ public class VideosController : BaseJellyfinApiController
     public async Task<ActionResult> MergeVersions([FromQuery, Required, ModelBinder(typeof(CommaDelimitedArrayModelBinder))] Guid[] ids)
     {
         var items = ids
-            .Select(i => _libraryManager.GetItemById(i))
+            .Select(i => _itemService.GetItemById(i))
             .OfType<Video>()
             .OrderBy(i => i.Id)
             .ToList();
@@ -436,7 +436,7 @@ public class VideosController : BaseJellyfinApiController
                 HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,

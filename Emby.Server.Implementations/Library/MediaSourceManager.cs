@@ -35,10 +35,9 @@ namespace Emby.Server.Implementations.Library
     {
         // Do not use a pipe here because Roku http requests to the server will fail, without any explicit error message.
         private const char LiveStreamIdDelimeter = '_';
-
+        private readonly IItemService _itemService;
         private readonly IItemRepository _itemRepo;
         private readonly IUserManager _userManager;
-        private readonly ILibraryManager _libraryManager;
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<MediaSourceManager> _logger;
         private readonly IUserDataManager _userDataManager;
@@ -54,20 +53,20 @@ namespace Emby.Server.Implementations.Library
         private IMediaSourceProvider[] _providers;
 
         public MediaSourceManager(
+            IItemService itemService,
             IItemRepository itemRepo,
             IApplicationPaths applicationPaths,
             ILocalizationManager localizationManager,
             IUserManager userManager,
-            ILibraryManager libraryManager,
             ILogger<MediaSourceManager> logger,
             IFileSystem fileSystem,
             IUserDataManager userDataManager,
             IMediaEncoder mediaEncoder,
             IDirectoryService directoryService)
         {
+            _itemService = itemService;
             _itemRepo = itemRepo;
             _userManager = userManager;
-            _libraryManager = libraryManager;
             _logger = logger;
             _fileSystem = fileSystem;
             _userDataManager = userDataManager;
@@ -524,7 +523,7 @@ namespace Emby.Server.Implementations.Library
                 var user = _userManager.GetUserById(request.UserId);
                 var item = request.ItemId.Equals(default)
                     ? null
-                    : _libraryManager.GetItemById(request.ItemId);
+                    : _itemService.GetItemById(request.ItemId);
                 SetDefaultAudioAndSubtitleStreamIndexes(item, clone, user);
             }
 

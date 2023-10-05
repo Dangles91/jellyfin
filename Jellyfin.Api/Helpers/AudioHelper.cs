@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +25,7 @@ public class AudioHelper
 {
     private readonly IDlnaManager _dlnaManager;
     private readonly IUserManager _userManager;
-    private readonly ILibraryManager _libraryManager;
+    private readonly IItemService _itemService;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IMediaEncoder _mediaEncoder;
@@ -40,7 +40,7 @@ public class AudioHelper
     /// </summary>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
@@ -52,7 +52,7 @@ public class AudioHelper
     public AudioHelper(
         IDlnaManager dlnaManager,
         IUserManager userManager,
-        ILibraryManager libraryManager,
+        IItemService itemService,
         IMediaSourceManager mediaSourceManager,
         IServerConfigurationManager serverConfigurationManager,
         IMediaEncoder mediaEncoder,
@@ -64,7 +64,7 @@ public class AudioHelper
     {
         _dlnaManager = dlnaManager;
         _userManager = userManager;
-        _libraryManager = libraryManager;
+        _itemService = itemService;
         _mediaSourceManager = mediaSourceManager;
         _serverConfigurationManager = serverConfigurationManager;
         _mediaEncoder = mediaEncoder;
@@ -100,7 +100,7 @@ public class AudioHelper
                 _httpContextAccessor.HttpContext,
                 _mediaSourceManager,
                 _userManager,
-                _libraryManager,
+                _itemService,
                 _serverConfigurationManager,
                 _mediaEncoder,
                 _encodingHelper,
