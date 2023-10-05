@@ -43,7 +43,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly IItemService _itemService;
         private readonly AudioResolver _audioResolver;
         private readonly SubtitleResolver _subtitleResolver;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IMediaSourceManager _mediaSourceManager;
 
         public FFProbeVideoInfo(
@@ -61,7 +61,7 @@ namespace MediaBrowser.Providers.MediaInfo
             IItemService itemService,
             AudioResolver audioResolver,
             SubtitleResolver subtitleResolver,
-            ILibraryOptionsManager libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _logger = logger;
             _mediaSourceManager = mediaSourceManager;
@@ -77,7 +77,7 @@ namespace MediaBrowser.Providers.MediaInfo
             _itemService = itemService;
             _audioResolver = audioResolver;
             _subtitleResolver = subtitleResolver;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
         }
 
         public async Task<ItemUpdateType> ProbeVideo<T>(
@@ -245,7 +245,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 chapters = Array.Empty<ChapterInfo>();
             }
 
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(video);
 
             if (mediaInfo is not null)
             {
@@ -557,7 +557,7 @@ namespace MediaBrowser.Providers.MediaInfo
 
             var subtitleOptions = _config.GetConfiguration<SubtitleOptions>("subtitles");
 
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(video);
 
             string[] subtitleDownloadLanguages;
             bool skipIfEmbeddedSubtitlesPresent;

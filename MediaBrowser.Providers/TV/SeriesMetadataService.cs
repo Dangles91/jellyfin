@@ -32,10 +32,10 @@ namespace MediaBrowser.Providers.TV
             IFileSystem fileSystem,
             ILibraryManager libraryManager,
             ILocalizationManager localizationManager,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemService itemService,
             ILibraryItemIdGenerator libraryItemIdGenerator)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, virtualFolderManager)
         {
             _localizationManager = localizationManager;
             _itemService = itemService;

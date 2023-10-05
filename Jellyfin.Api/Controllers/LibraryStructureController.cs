@@ -32,8 +32,8 @@ public class LibraryStructureController : BaseJellyfinApiController
     private readonly IServerApplicationPaths _appPaths;
     private readonly ILibraryManager _libraryManager;
     private readonly IItemService _itemService;
-    private readonly ILibraryMonitor _libraryMonitor;
-    private readonly ILibraryOptionsManager _libraryOptionsManager;
+    private readonly ILibraryMonitorOrchestrator _libraryMonitorOrchestrator;
+    private readonly IVirtualFolderManager _virtualFolderManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LibraryStructureController"/> class.
@@ -41,20 +41,20 @@ public class LibraryStructureController : BaseJellyfinApiController
     /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
-    /// <param name="libraryMonitor">Instance of <see cref="ILibraryMonitor"/> interface.</param>
-    /// <param name="libraryOptionsManager">Instance of <see cref="ILibraryOptionsManager"/> interface.</param>
+    /// <param name="libraryMonitorOrchestrator">Instance of <see cref="ILibraryMonitorOrchestrator"/> interface.</param>
+    /// <param name="virtualFolderManager">Instance of <see cref="IVirtualFolderManager"/> interface.</param>
     public LibraryStructureController(
         IServerConfigurationManager serverConfigurationManager,
         ILibraryManager libraryManager,
         IItemService itemService,
-        ILibraryMonitor libraryMonitor,
-        ILibraryOptionsManager libraryOptionsManager)
+        ILibraryMonitorOrchestrator libraryMonitorOrchestrator,
+        IVirtualFolderManager virtualFolderManager)
     {
         _appPaths = serverConfigurationManager.ApplicationPaths;
         _libraryManager = libraryManager;
         _itemService = itemService;
-        _libraryMonitor = libraryMonitor;
-        _libraryOptionsManager = libraryOptionsManager;
+        _libraryMonitorOrchestrator = libraryMonitorOrchestrator;
+        _virtualFolderManager = virtualFolderManager;
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class LibraryStructureController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<IEnumerable<VirtualFolderInfo>> GetVirtualFolders()
     {
-        return _libraryManager.GetVirtualFolders(true);
+        return _virtualFolderManager.GetVirtualFolders(true);
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class LibraryStructureController : BaseJellyfinApiController
             libraryOptions.PathInfos = paths.Select(i => new MediaPathInfo(i)).ToArray();
         }
 
-        await _libraryManager.AddVirtualFolder(name, collectionType, libraryOptions, refreshLibrary).ConfigureAwait(false);
+        await _virtualFolderManager.AddVirtualFolder(name!, collectionType, libraryOptions, refreshLibrary).ConfigureAwait(false);
 
         return NoContent();
     }
@@ -162,7 +162,7 @@ public class LibraryStructureController : BaseJellyfinApiController
             return Conflict($"The media library already exists at {newPath}.");
         }
 
-        _libraryMonitor.Stop();
+        _libraryMonitorOrchestrator.RequestStop();
 
         try
         {
@@ -180,7 +180,7 @@ public class LibraryStructureController : BaseJellyfinApiController
         }
         finally
         {
-            _libraryOptionsManager.ClearOptionsCache();
+            _virtualFolderManager.ClearOptionsCache();
 
             Task.Run(async () =>
             {
@@ -194,7 +194,7 @@ public class LibraryStructureController : BaseJellyfinApiController
                     // Need to add a delay here or directory watchers may still pick up the changes
                     // Have to block here to allow exceptions to bubble
                     await Task.Delay(1000).ConfigureAwait(false);
-                    _libraryMonitor.Start();
+                    _libraryMonitorOrchestrator.RequestStart();
                 }
             });
         }
@@ -216,8 +216,7 @@ public class LibraryStructureController : BaseJellyfinApiController
         [FromBody, Required] MediaPathDto mediaPathDto,
         [FromQuery] bool refreshLibrary = false)
     {
-        _libraryMonitor.Stop();
-
+        _libraryMonitorOrchestrator.RequestStop();
         try
         {
             var mediaPath = mediaPathDto.PathInfo ?? new MediaPathInfo(mediaPathDto.Path ?? throw new ArgumentException("PathInfo and Path can't both be null."));
@@ -238,7 +237,7 @@ public class LibraryStructureController : BaseJellyfinApiController
                     // Need to add a delay here or directory watchers may still pick up the changes
                     // Have to block here to allow exceptions to bubble
                     await Task.Delay(1000).ConfigureAwait(false);
-                    _libraryMonitor.Start();
+                    _libraryMonitorOrchestrator.RequestStart();
                 }
             });
         }
@@ -287,7 +286,7 @@ public class LibraryStructureController : BaseJellyfinApiController
             throw new ArgumentNullException(nameof(name));
         }
 
-        _libraryMonitor.Stop();
+        _libraryMonitorOrchestrator.RequestStart();
 
         try
         {
@@ -307,7 +306,7 @@ public class LibraryStructureController : BaseJellyfinApiController
                     // Need to add a delay here or directory watchers may still pick up the changes
                     // Have to block here to allow exceptions to bubble
                     await Task.Delay(1000).ConfigureAwait(false);
-                    _libraryMonitor.Start();
+                    _libraryMonitorOrchestrator.RequestStart();
                 }
             });
         }
@@ -328,7 +327,7 @@ public class LibraryStructureController : BaseJellyfinApiController
     {
         var collectionFolder = (CollectionFolder)_itemService.GetItemById(request.Id);
 
-        _libraryOptionsManager.UpdateLibraryOptions(collectionFolder, request.LibraryOptions);
+        _virtualFolderManager.UpdateLibraryOptions(collectionFolder, request.LibraryOptions);
         return NoContent();
     }
 }

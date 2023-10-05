@@ -22,7 +22,7 @@ namespace MediaBrowser.Controller.Library
         /// The _app paths.
         /// </summary>
         private readonly IServerApplicationPaths _appPaths;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemContentTypeProvider _itemContentTypeProvider;
         private readonly IFileSystem _fileSystem;
         private readonly IResolverIgnoreRulesProvider _resolverIgnoreRulesProvider;
@@ -32,19 +32,19 @@ namespace MediaBrowser.Controller.Library
         /// Initializes a new instance of the <see cref="ItemResolveArgs" /> class.
         /// </summary>
         /// <param name="appPaths">The app paths.</param>
-        /// <param name="libraryOptionsManager">The library options.</param>
+        /// <param name="virtualFolderManager">The library options.</param>
         /// <param name="itemContentTypeProvider">The item content type provider.</param>
         /// <param name="fileSystem">The instance of <see cref="IFileSystem"/> interface.</param>
         /// <param name="resolverIgnoreRulesProvider">The resolver ignore rules provider.</param>
         public ItemResolveArgs(
             IServerApplicationPaths appPaths,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemContentTypeProvider itemContentTypeProvider,
             IFileSystem fileSystem,
             IResolverIgnoreRulesProvider resolverIgnoreRulesProvider)
         {
             _appPaths = appPaths;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _itemContentTypeProvider = itemContentTypeProvider;
             _fileSystem = fileSystem;
             _resolverIgnoreRulesProvider = resolverIgnoreRulesProvider;
@@ -58,7 +58,7 @@ namespace MediaBrowser.Controller.Library
 
         public LibraryOptions LibraryOptions
         {
-            get => _libraryOptions ??= Parent is null ? new LibraryOptions() : _libraryOptionsManager.GetLibraryOptions(Parent);
+            get => _libraryOptions ??= Parent is null ? new LibraryOptions() : _virtualFolderManager.GetLibraryOptions(Parent);
             set => _libraryOptions = value;
         }
 

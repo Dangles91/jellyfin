@@ -64,7 +64,7 @@ namespace MediaBrowser.Providers.MediaInfo
         /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/>.</param>
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="namingOptions">The <see cref="NamingOptions"/>.</param>
-        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="virtualFolderManager">Instance of the <see cref="IVirtualFolderManager"/> interface.</param>
         public ProbeProvider(
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
@@ -80,10 +80,10 @@ namespace MediaBrowser.Providers.MediaInfo
             IFileSystem fileSystem,
             ILoggerFactory loggerFactory,
             NamingOptions namingOptions,
-            ILibraryOptionsManager libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _logger = loggerFactory.CreateLogger<ProbeProvider>();
-            _audioProber = new AudioFileProber(loggerFactory.CreateLogger<AudioFileProber>(), mediaSourceManager, mediaEncoder, itemRepo, libraryManager, libraryOptionsManager);
+            _audioProber = new AudioFileProber(loggerFactory.CreateLogger<AudioFileProber>(), mediaSourceManager, mediaEncoder, itemRepo, libraryManager, virtualFolderManager);
             _audioResolver = new AudioResolver(loggerFactory.CreateLogger<AudioResolver>(), localization, mediaEncoder, fileSystem, namingOptions);
             _subtitleResolver = new SubtitleResolver(loggerFactory.CreateLogger<SubtitleResolver>(), localization, mediaEncoder, fileSystem, namingOptions);
             _videoProber = new FFProbeVideoInfo(
@@ -101,7 +101,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 itemService,
                 _audioResolver,
                 _subtitleResolver,
-                libraryOptionsManager);
+                virtualFolderManager);
         }
 
         /// <inheritdoc />

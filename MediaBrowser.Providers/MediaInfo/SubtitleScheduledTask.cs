@@ -28,7 +28,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly ISubtitleManager _subtitleManager;
         private readonly ILogger<SubtitleScheduledTask> _logger;
         private readonly ILocalizationManager _localization;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly IItemQueryService _itemQueryService;
 
@@ -37,7 +37,7 @@ namespace MediaBrowser.Providers.MediaInfo
             ISubtitleManager subtitleManager,
             ILogger<SubtitleScheduledTask> logger,
             ILocalizationManager localization,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemQueryService itemQueryService)
         {
@@ -45,7 +45,7 @@ namespace MediaBrowser.Providers.MediaInfo
             _subtitleManager = subtitleManager;
             _logger = logger;
             _localization = localization;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _libraryRootFolderManager = libraryRootFolderManager;
             _itemQueryService = itemQueryService;
         }
@@ -80,7 +80,7 @@ namespace MediaBrowser.Providers.MediaInfo
 
             foreach (var library in _libraryRootFolderManager.GetRootFolder().Children.ToList())
             {
-                var libraryOptions = _libraryOptionsManager.GetLibraryOptions(library);
+                var libraryOptions = _virtualFolderManager.GetLibraryOptions(library);
 
                 string[] subtitleDownloadLanguages;
                 bool skipIfEmbeddedSubtitlesPresent;
@@ -171,7 +171,7 @@ namespace MediaBrowser.Providers.MediaInfo
         {
             var mediaStreams = video.GetMediaStreams();
 
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(video);
 
             string[] subtitleDownloadLanguages;
             bool skipIfEmbeddedSubtitlesPresent;

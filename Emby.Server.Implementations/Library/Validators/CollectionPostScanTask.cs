@@ -22,7 +22,7 @@ namespace Emby.Server.Implementations.Library.Validators
         private readonly ICollectionManager _collectionManager;
         private readonly ILogger<CollectionPostScanTask> _logger;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
@@ -31,19 +31,19 @@ namespace Emby.Server.Implementations.Library.Validators
         /// <param name="collectionManager">The collection manager.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="libraryRootFolderManager">The library root folder manager.</param>
-        /// <param name="libraryOptionsManager">The library options manager.</param>
+        /// <param name="virtualFolderManager">The library options manager.</param>
         /// <param name="itemQueryService">The item query service.</param>
         public CollectionPostScanTask(
             ICollectionManager collectionManager,
             ILogger<CollectionPostScanTask> logger,
             ILibraryRootFolderManager libraryRootFolderManager,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemQueryService itemQueryService)
         {
             _collectionManager = collectionManager;
             _logger = logger;
             _libraryRootFolderManager = libraryRootFolderManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _itemQueryService = itemQueryService;
         }
 
@@ -59,7 +59,7 @@ namespace Emby.Server.Implementations.Library.Validators
 
             foreach (var library in _libraryRootFolderManager.GetRootFolder().Children)
             {
-                if (!_libraryOptionsManager.GetLibraryOptions(library).AutomaticallyAddToCollection)
+                if (!_virtualFolderManager.GetLibraryOptions(library).AutomaticallyAddToCollection)
                 {
                     continue;
                 }

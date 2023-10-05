@@ -531,11 +531,11 @@ namespace Emby.Server.Implementations
             serviceCollection.AddTransient(provider => new Lazy<IUserViewManager>(provider.GetRequiredService<IUserViewManager>));
             serviceCollection.AddSingleton<ILibraryManager, LibraryManager>();
             serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
-            serviceCollection.AddSingleton<ILibraryOptionsManager, LibraryOptionsManager>();
+            serviceCollection.AddSingleton<IVirtualFolderManager, LibraryOptionsManager>();
             serviceCollection.AddSingleton<ILibraryItemIdGenerator, Md5LibraryItemIdGenerator>();
             serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
             serviceCollection.AddSingleton<ILibraryRootFolderManager, LibraryRootFolderManager>();
-            serviceCollection.AddSingleton<ILibraryOptionsManager, LibraryOptionsManager>();
+            serviceCollection.AddSingleton<IVirtualFolderManager, LibraryOptionsManager>();
             serviceCollection.AddSingleton<IItemResolveArgsFactory, ItemResolveArgsFactory>();
             serviceCollection.AddSingleton<IResolverIgnoreRulesProvider, ResolverIgnoreRulesProvider>();
 
@@ -692,7 +692,7 @@ namespace Emby.Server.Implementations
                 Resolve<IItemService>(),
                 Resolve<ILibraryRootFolderManager>(),
                 Resolve<IItemPathResolver>(),
-                Resolve<ILibraryOptionsManager>(),
+                Resolve<IVirtualFolderManager>(),
                 Resolve<ICollectionManager>(),
                 Resolve<IItemContentTypeProvider>(),
                 Resolve<IUserViewBuilder>(),

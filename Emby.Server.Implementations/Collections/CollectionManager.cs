@@ -312,56 +312,6 @@ namespace Emby.Server.Implementations.Collections
             ItemsRemovedFromCollection?.Invoke(this, new CollectionModifiedEventArgs(collection, itemList));
         }
 
-        /// <inheritdoc/>
-        public List<Folder> GetCollectionFolders(BaseItem item)
-        {
-            return GetCollectionFolders(item, _libraryRootFolderManager.GetUserRootFolder().Children.OfType<Folder>());
-        }
-
-        /// <inheritdoc/>
-        public List<Folder> GetCollectionFolders(BaseItem item, IEnumerable<Folder> allUserRootChildren)
-        {
-            while (item is not null)
-            {
-                var parent = item.GetParent();
-
-                if (parent is AggregateFolder)
-                {
-                    break;
-                }
-
-                if (parent is null)
-                {
-                    var owner = item.GetOwner();
-
-                    if (owner is null)
-                    {
-                        break;
-                    }
-
-                    item = owner;
-                }
-                else
-                {
-                    item = parent;
-                }
-            }
-
-            if (item is null)
-            {
-                return new List<Folder>();
-            }
-
-            return GetCollectionFoldersInternal(item, allUserRootChildren);
-        }
-
-        private static List<Folder> GetCollectionFoldersInternal(BaseItem item, IEnumerable<Folder> allUserRootChildren)
-        {
-            return allUserRootChildren
-                .Where(i => string.Equals(i.Path, item.Path, StringComparison.OrdinalIgnoreCase) ||
-                    i.PhysicalLocations.Contains(item.Path.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
 
         /// <inheritdoc />
         public IEnumerable<BaseItem> CollapseItemsWithinBoxSets(IEnumerable<BaseItem> items, User user)

@@ -18,7 +18,7 @@ namespace Emby.Server.Implementations.Library
     public class ItemResolveArgsFactory : IItemResolveArgsFactory
     {
         private readonly IServerApplicationPaths _appPaths;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IResolverIgnoreRulesProvider _ignoreRulesProvider;
         private readonly IItemContentTypeProvider _itemContentTypeProvider;
         private readonly IFileSystem _fileSystem;
@@ -27,19 +27,19 @@ namespace Emby.Server.Implementations.Library
         /// Initializes a new instance of the <see cref="ItemResolveArgsFactory" /> class.
         /// </summary>
         /// <param name="appPaths">The app paths.</param>
-        /// <param name="libraryOptionsManager">The library options.</param>
+        /// <param name="virtualFolderManager">The library options.</param>
         /// <param name="ignoreRulesProvider">Provider for ignore rules.</param>
         /// <param name="itemContentTypeProvider">The item content type provider.</param>
         /// <param name="fileSystem">The instance of <see cref="IFileSystem"/> interface.</param>
         public ItemResolveArgsFactory(
             IServerApplicationPaths appPaths,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IResolverIgnoreRulesProvider ignoreRulesProvider,
             IItemContentTypeProvider itemContentTypeProvider,
             IFileSystem fileSystem)
         {
             _appPaths = appPaths;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _ignoreRulesProvider = ignoreRulesProvider;
             _itemContentTypeProvider = itemContentTypeProvider;
             _fileSystem = fileSystem;
@@ -52,7 +52,7 @@ namespace Emby.Server.Implementations.Library
             string? collectionType,
             LibraryOptions? libraryOptions)
         {
-            ItemResolveArgs args = new(_appPaths, _libraryOptionsManager, _itemContentTypeProvider, _fileSystem, _ignoreRulesProvider)
+            ItemResolveArgs args = new(_appPaths, _virtualFolderManager, _itemContentTypeProvider, _fileSystem, _ignoreRulesProvider)
             {
                 Parent = parent,
                 FileInfo = fileInfo,

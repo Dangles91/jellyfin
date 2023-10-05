@@ -12,18 +12,18 @@ namespace Jellyfin.Server.Migrations.Routines
     {
         private readonly ILogger<RemoveDownloadImagesInAdvance> _logger;
         private readonly ILibraryManager _libraryManager;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemService _itemService;
 
         public RemoveDownloadImagesInAdvance(
             ILogger<RemoveDownloadImagesInAdvance> logger,
             ILibraryManager libraryManager,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemService itemService)
         {
             _logger = logger;
             _libraryManager = libraryManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _itemService = itemService;
         }
 
@@ -52,7 +52,7 @@ namespace Jellyfin.Server.Migrations.Routines
                 var libraryOptions = virtualFolder.LibraryOptions;
                 var collectionFolder = (CollectionFolder)_itemService.GetItemById(folderId);
                 // The property no longer exists in LibraryOptions, so we just re-save the options to get old data removed.
-                _libraryOptionsManager.UpdateLibraryOptions(collectionFolder, libraryOptions);
+                _virtualFolderManager.UpdateLibraryOptions(collectionFolder, libraryOptions);
                 _logger.LogInformation("Removed from '{VirtualFolder}'", virtualFolder.Name);
             }
         }

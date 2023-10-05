@@ -63,14 +63,6 @@ namespace MediaBrowser.Controller.Library
         Task ValidateMediaLibrary(IProgress<double> progress, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Gets the default view.
-        /// </summary>
-        /// <returns>IEnumerable{VirtualFolderInfo}.</returns>
-        List<VirtualFolderInfo> GetVirtualFolders();
-
-        List<VirtualFolderInfo> GetVirtualFolders(bool includeRefreshState);
-
-        /// <summary>
         /// Gets the item by id.
         /// </summary>
         /// <param name="id">The id.</param>
@@ -186,16 +178,6 @@ namespace MediaBrowser.Controller.Library
         Guid GetGenreId(string name);
 
         Guid GetMusicGenreId(string name);
-
-        Task AddVirtualFolder(string name, CollectionTypeOptions? collectionType, LibraryOptions options, bool refreshLibrary);
-
-        Task RemoveVirtualFolder(string name, bool refreshLibrary);
-
-        void AddMediaPath(string virtualFolderName, MediaPathInfo mediaPath);
-
-        void UpdateMediaPath(string virtualFolderName, MediaPathInfo mediaPath);
-
-        void RemoveMediaPath(string virtualFolderName, string mediaPath);
 
         Task RunMetadataSavers(BaseItem item, ItemUpdateType updateReason);
 

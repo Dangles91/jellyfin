@@ -12,7 +12,7 @@ namespace MediaBrowser.Controller.Library
         void Start();
 
         /// <summary>
-        /// Stops this instance.
+        /// Stops this instance. <see cref="ILibraryMonitorOrchestrator"/> is the preferred method of managing the status of library monitoring.
         /// </summary>
         void Stop();
 

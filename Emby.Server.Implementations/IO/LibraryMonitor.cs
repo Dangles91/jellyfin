@@ -20,7 +20,7 @@ namespace Emby.Server.Implementations.IO
         private readonly ILogger<LibraryMonitor> _logger;
         private readonly IFileSystem _fileSystem;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly FileRefresherFactory _fileRefresherFactory;
 
         /// <summary>
@@ -46,20 +46,24 @@ namespace Emby.Server.Implementations.IO
         /// <param name="logger">The logger.</param>
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="libraryRootFolderManager">The root folder manager.</param>
-        /// <param name="libraryOptionsManager">The library options manager.</param>
+        /// <param name="virtualFolderManager">The library options manager.</param>
+        /// <param name="libraryMonitorOrchestrator">Orchestrator for realtime library monitoring.</param>
         /// <param name="fileRefresherFactory">the factory.</param>
         public LibraryMonitor(
             ILogger<LibraryMonitor> logger,
             IFileSystem fileSystem,
             ILibraryRootFolderManager libraryRootFolderManager,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
+            ILibraryMonitorOrchestrator libraryMonitorOrchestrator,
             FileRefresherFactory fileRefresherFactory)
         {
             _logger = logger;
             _fileSystem = fileSystem;
             _libraryRootFolderManager = libraryRootFolderManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _fileRefresherFactory = fileRefresherFactory;
+
+            libraryMonitorOrchestrator.RegisterLibraryMonitor(this);
         }
 
         /// <summary>
@@ -109,7 +113,7 @@ namespace Emby.Server.Implementations.IO
                 return false;
             }
 
-            var options = _libraryOptionsManager.GetLibraryOptions(item);
+            var options = _virtualFolderManager.GetLibraryOptions(item);
 
             if (options is not null)
             {

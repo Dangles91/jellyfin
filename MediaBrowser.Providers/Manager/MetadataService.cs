@@ -33,18 +33,18 @@ namespace MediaBrowser.Providers.Manager
             IProviderManager providerManager,
             IFileSystem fileSystem,
             ILibraryManager libraryManager,
-            ILibraryOptionsManager libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             ServerConfigurationManager = serverConfigurationManager;
             Logger = logger;
             ProviderManager = providerManager;
             FileSystem = fileSystem;
             LibraryManager = libraryManager;
-            LibraryOptionsManager = libraryOptionsManager;
+            LibraryOptionsManager = virtualFolderManager;
             ImageProvider = new ItemImageProvider(Logger, ProviderManager, FileSystem);
         }
 
-        protected ILibraryOptionsManager LibraryOptionsManager { get; }
+        protected IVirtualFolderManager LibraryOptionsManager { get; }
 
         protected ItemImageProvider ImageProvider { get; }
 

@@ -18,8 +18,8 @@ namespace MediaBrowser.Providers.Videos
             IProviderManager providerManager,
             IFileSystem fileSystem,
             ILibraryManager libraryManager,
-            ILibraryOptionsManager libraryOptionsManager)
-            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
+            : base(serverConfigurationManager, logger, providerManager, fileSystem, libraryManager, virtualFolderManager)
         {
         }
 

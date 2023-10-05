@@ -480,7 +480,7 @@ namespace MediaBrowser.Controller.Entities
 
         protected static IItemPathResolver ItemPathResolver { get; set; }
 
-        protected static ILibraryOptionsManager LibraryOptionsManager { get; set; }
+        protected static IVirtualFolderManager LibraryOptionsManager { get; set; }
 
         protected static ICollectionManager LibraryCollectionManager { get; set; }
 
@@ -807,7 +807,7 @@ namespace MediaBrowser.Controller.Entities
         /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
         /// <param name="libraryRootFolderManager">Instance of the <see cref="ILibraryRootFolderManager"/> interface.</param>
         /// <param name="itemPathResolver">Instance of the <see cref="IItemPathResolver"/> interface.</param>
-        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="virtualFolderManager">Instance of the <see cref="IVirtualFolderManager"/> interface.</param>
         /// <param name="libraryCollectionManager">Instance of the <see cref="ICollectionManager"/> interface.</param>
         /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
         /// <param name="userViewBuilder">Instance of the <see cref="IUserViewBuilder"/> interface.</param>
@@ -827,7 +827,7 @@ namespace MediaBrowser.Controller.Entities
             IItemService itemService,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemPathResolver itemPathResolver,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             ICollectionManager libraryCollectionManager,
             IItemContentTypeProvider itemContentTypeProvider,
             IUserViewBuilder userViewBuilder,
@@ -846,7 +846,7 @@ namespace MediaBrowser.Controller.Entities
             ItemService = itemService;
             LibraryRootFolderManager = libraryRootFolderManager;
             ItemPathResolver = itemPathResolver;
-            LibraryOptionsManager = libraryOptionsManager;
+            LibraryOptionsManager = virtualFolderManager;
             LibraryCollectionManager = libraryCollectionManager;
             ItemContentTypeProvider = itemContentTypeProvider;
             UserViewBuilder = userViewBuilder;

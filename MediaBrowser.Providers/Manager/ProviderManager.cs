@@ -55,7 +55,7 @@ namespace MediaBrowser.Providers.Manager
         private readonly ISubtitleManager _subtitleManager;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IBaseItemManager _baseItemManager;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemService _itemService;
         private readonly IItemQueryService _itemQueryService;
         private readonly ConcurrentDictionary<Guid, double> _activeRefreshes = new();
@@ -82,7 +82,7 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="appPaths">The server application paths.</param>
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="baseItemManager">The BaseItem manager.</param>
-        /// <param name="libraryOptionsManager">The instance of <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="virtualFolderManager">The instance of <see cref="IVirtualFolderManager"/> interface.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
         /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> interface.</param>
         public ProviderManager(
@@ -95,7 +95,7 @@ namespace MediaBrowser.Providers.Manager
             IServerApplicationPaths appPaths,
             ILibraryManager libraryManager,
             IBaseItemManager baseItemManager,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemService itemService,
             IItemQueryService itemQueryService)
         {
@@ -108,7 +108,7 @@ namespace MediaBrowser.Providers.Manager
             _libraryManager = libraryManager;
             _subtitleManager = subtitleManager;
             _baseItemManager = baseItemManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _itemService = itemService;
             _itemQueryService = itemQueryService;
         }
@@ -319,7 +319,7 @@ namespace MediaBrowser.Providers.Manager
         private IEnumerable<IRemoteImageProvider> GetRemoteImageProviders(BaseItem item, bool includeDisabled)
         {
             var options = GetMetadataOptions(item);
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(item);
 
             return GetImageProvidersInternal(
                 item,
@@ -332,7 +332,7 @@ namespace MediaBrowser.Providers.Manager
         /// <inheritdoc/>
         public IEnumerable<IImageProvider> GetImageProviders(BaseItem item, ImageRefreshOptions refreshOptions)
         {
-            return GetImageProvidersInternal(item, _libraryOptionsManager.GetLibraryOptions(item), GetMetadataOptions(item), refreshOptions, false);
+            return GetImageProvidersInternal(item, _virtualFolderManager.GetLibraryOptions(item), GetMetadataOptions(item), refreshOptions, false);
         }
 
         private IEnumerable<IImageProvider> GetImageProvidersInternal(BaseItem item, LibraryOptions libraryOptions, MetadataOptions options, ImageRefreshOptions refreshOptions, bool includeDisabled)
@@ -603,7 +603,7 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="savers">The savers.</param>
         private async Task SaveMetadataAsync(BaseItem item, ItemUpdateType updateType, IEnumerable<IMetadataSaver> savers)
         {
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(item);
 
             foreach (var saver in savers.Where(i => IsSaverEnabledForItem(i, item, libraryOptions, updateType, false)))
             {
@@ -748,7 +748,7 @@ namespace MediaBrowser.Providers.Manager
             }
             else
             {
-                libraryOptions = _libraryOptionsManager.GetLibraryOptions(referenceItem);
+                libraryOptions = _virtualFolderManager.GetLibraryOptions(referenceItem);
             }
 
             var options = GetMetadataOptions(referenceItem);

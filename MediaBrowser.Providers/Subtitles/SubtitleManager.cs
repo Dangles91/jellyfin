@@ -32,7 +32,7 @@ namespace MediaBrowser.Providers.Subtitles
         private readonly ILibraryMonitor _monitor;
         private readonly IMediaSourceManager _mediaSourceManager;
         private readonly ILocalizationManager _localization;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly ISubtitleProvider[] _subtitleProviders;
 
         public SubtitleManager(
@@ -42,14 +42,14 @@ namespace MediaBrowser.Providers.Subtitles
             IMediaSourceManager mediaSourceManager,
             ILocalizationManager localizationManager,
             IEnumerable<ISubtitleProvider> subtitleProviders,
-            ILibraryOptionsManager libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _logger = logger;
             _fileSystem = fileSystem;
             _monitor = monitor;
             _mediaSourceManager = mediaSourceManager;
             _localization = localizationManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _subtitleProviders = subtitleProviders
                 .OrderBy(i => i is IHasOrder hasOrder ? hasOrder.Order : 0)
                 .ToArray();
@@ -132,7 +132,7 @@ namespace MediaBrowser.Providers.Subtitles
         /// <inheritdoc />
         public Task DownloadSubtitles(Video video, string subtitleId, CancellationToken cancellationToken)
         {
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(video);
 
             return DownloadSubtitles(video, libraryOptions, subtitleId, cancellationToken);
         }
@@ -173,7 +173,7 @@ namespace MediaBrowser.Providers.Subtitles
         /// <inheritdoc />
         public Task UploadSubtitle(Video video, SubtitleResponse response)
         {
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(video);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(video);
             return TrySaveSubtitle(video, libraryOptions, response);
         }
 

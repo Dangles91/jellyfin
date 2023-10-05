@@ -26,7 +26,7 @@ namespace Emby.Server.Implementations.Library
         private readonly IServerConfigurationManager _serverConfigurationManager;
         private readonly ILogger<ItemPathResolver> _logger;
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemResolveArgsFactory _itemResolveArgsFactory;
         private readonly IResolverIgnoreRulesProvider _ignoreRulesProvider;
         private readonly IItemContentTypeProvider _itemContentTypeProvider;
@@ -42,7 +42,7 @@ namespace Emby.Server.Implementations.Library
         /// <param name="serverConfigurationManager">Instance of <see cref="IServerConfigurationManager"/> interface.</param>
         /// <param name="logger">Instance of <see cref="ILogger{ItemPathResolver}"/> interface.</param>
         /// <param name="libraryItemIdGenerator">Instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
-        /// <param name="libraryOptionsManager">Instance of <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="virtualFolderManager">Instance of <see cref="IVirtualFolderManager"/> interface.</param>
         /// <param name="itemResolveArgsFactory">The factory for creating resolve args.</param>
         /// <param name="ignoreRulesProvider">Provider of ignore rules.</param>
         /// <param name="itemContentTypeProvider">Instance of <see cref="IItemContentTypeProvider"/> interface.</param>
@@ -51,7 +51,7 @@ namespace Emby.Server.Implementations.Library
             IServerConfigurationManager serverConfigurationManager,
             ILogger<ItemPathResolver> logger,
             ILibraryItemIdGenerator libraryItemIdGenerator,
-            ILibraryOptionsManager libraryOptionsManager,
+            IVirtualFolderManager virtualFolderManager,
             IItemResolveArgsFactory itemResolveArgsFactory,
             IResolverIgnoreRulesProvider ignoreRulesProvider,
             IItemContentTypeProvider itemContentTypeProvider)
@@ -60,7 +60,7 @@ namespace Emby.Server.Implementations.Library
             _serverConfigurationManager = serverConfigurationManager;
             _logger = logger;
             _libraryItemIdGenerator = libraryItemIdGenerator;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _itemResolveArgsFactory = itemResolveArgsFactory;
             _ignoreRulesProvider = ignoreRulesProvider;
             _itemContentTypeProvider = itemContentTypeProvider;
@@ -427,7 +427,7 @@ namespace Emby.Server.Implementations.Library
             string newPath;
             if (ownerItem is not null)
             {
-                var libraryOptions = _libraryOptionsManager.GetLibraryOptions(ownerItem);
+                var libraryOptions = _virtualFolderManager.GetLibraryOptions(ownerItem);
                 if (libraryOptions is not null)
                 {
                     foreach (var pathInfo in libraryOptions.PathInfos)

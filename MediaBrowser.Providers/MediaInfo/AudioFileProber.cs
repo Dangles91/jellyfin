@@ -34,7 +34,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly IMediaEncoder _mediaEncoder;
         private readonly IItemRepository _itemRepo;
         private readonly ILibraryManager _libraryManager;
-        private readonly ILibraryOptionsManager _libraryOptionsManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IMediaSourceManager _mediaSourceManager;
 
         /// <summary>
@@ -45,20 +45,20 @@ namespace MediaBrowser.Providers.MediaInfo
         /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
         /// <param name="itemRepo">Instance of the <see cref="IItemRepository"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
-        /// <param name="libraryOptionsManager">Instance of the <see cref="ILibraryOptionsManager"/> interface.</param>
+        /// <param name="virtualFolderManager">Instance of the <see cref="IVirtualFolderManager"/> interface.</param>
         public AudioFileProber(
             ILogger<AudioFileProber> logger,
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
             IItemRepository itemRepo,
             ILibraryManager libraryManager,
-            ILibraryOptionsManager libraryOptionsManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _logger = logger;
             _mediaEncoder = mediaEncoder;
             _itemRepo = itemRepo;
             _libraryManager = libraryManager;
-            _libraryOptionsManager = libraryOptionsManager;
+            _virtualFolderManager = virtualFolderManager;
             _mediaSourceManager = mediaSourceManager;
         }
 
@@ -107,7 +107,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 Fetch(item, result, cancellationToken);
             }
 
-            var libraryOptions = _libraryOptionsManager.GetLibraryOptions(item);
+            var libraryOptions = _virtualFolderManager.GetLibraryOptions(item);
 
             if (libraryOptions.EnableLUFSScan)
             {

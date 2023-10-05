@@ -27,21 +27,6 @@ namespace MediaBrowser.Controller.Collections
         event EventHandler<CollectionModifiedEventArgs>? ItemsRemovedFromCollection;
 
         /// <summary>
-        /// Gets the collection folders.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <returns>The folders that contain the item.</returns>
-        List<Folder> GetCollectionFolders(BaseItem item);
-
-        /// <summary>
-        /// Gets the collection folders.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <param name="allUserRootChildren">The root folders to consider.</param>
-        /// <returns>The folders that contain the item.</returns>
-        List<Folder> GetCollectionFolders(BaseItem item, IEnumerable<Folder> allUserRootChildren);
-
-        /// <summary>
         /// Creates the collection.
         /// </summary>
         /// <param name="options">The options.</param>
