@@ -113,7 +113,8 @@ public class LibraryStructureController : BaseJellyfinApiController
         [FromQuery] string? name,
         [FromQuery] bool refreshLibrary = false)
     {
-        await _libraryManager.RemoveVirtualFolder(name, refreshLibrary).ConfigureAwait(false);
+        // TODO: Fix this. We allow null virutal folder names on creation but require it for delete.
+        await _virtualFolderManager.RemoveVirtualFolder(name!, refreshLibrary).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -221,7 +222,8 @@ public class LibraryStructureController : BaseJellyfinApiController
         {
             var mediaPath = mediaPathDto.PathInfo ?? new MediaPathInfo(mediaPathDto.Path ?? throw new ArgumentException("PathInfo and Path can't both be null."));
 
-            _libraryManager.AddMediaPath(mediaPathDto.Name, mediaPath);
+            // TODO: Fix this. Virutal folders can be created without a name, however we expect a name for the folder when managing media paths.
+            _virtualFolderManager.AddMediaPath(mediaPathDto.Name!, mediaPath);
         }
         finally
         {
@@ -261,7 +263,8 @@ public class LibraryStructureController : BaseJellyfinApiController
             throw new ArgumentNullException(nameof(mediaPathRequestDto), "Name must not be null or empty");
         }
 
-        _libraryManager.UpdateMediaPath(mediaPathRequestDto.Name, mediaPathRequestDto.PathInfo);
+         // TODO: Fix this. Virutal folders can be created without a name, however we expect a name for the folder when managing media paths.
+        _virtualFolderManager.UpdateMediaPath(mediaPathRequestDto.Name, mediaPathRequestDto.PathInfo);
         return NoContent();
     }
 
@@ -290,7 +293,8 @@ public class LibraryStructureController : BaseJellyfinApiController
 
         try
         {
-            _libraryManager.RemoveMediaPath(name, path);
+            // TODO: Fix this. Path should not be null.
+            _virtualFolderManager.RemoveMediaPath(name, path!);
         }
         finally
         {

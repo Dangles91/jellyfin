@@ -11,18 +11,15 @@ namespace Jellyfin.Server.Migrations.Routines
     internal class RemoveDownloadImagesInAdvance : IMigrationRoutine
     {
         private readonly ILogger<RemoveDownloadImagesInAdvance> _logger;
-        private readonly ILibraryManager _libraryManager;
         private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemService _itemService;
 
         public RemoveDownloadImagesInAdvance(
             ILogger<RemoveDownloadImagesInAdvance> logger,
-            ILibraryManager libraryManager,
             IVirtualFolderManager virtualFolderManager,
             IItemService itemService)
         {
             _logger = logger;
-            _libraryManager = libraryManager;
             _virtualFolderManager = virtualFolderManager;
             _itemService = itemService;
         }
@@ -39,7 +36,7 @@ namespace Jellyfin.Server.Migrations.Routines
         /// <inheritdoc/>
         public void Perform()
         {
-            var virtualFolders = _libraryManager.GetVirtualFolders(false);
+            var virtualFolders = _virtualFolderManager.GetVirtualFolders(false);
             _logger.LogInformation("Removing 'RemoveDownloadImagesInAdvance' settings in all the libraries");
             foreach (var virtualFolder in virtualFolders)
             {

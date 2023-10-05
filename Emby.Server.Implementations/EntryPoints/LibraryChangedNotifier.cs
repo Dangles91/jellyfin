@@ -32,7 +32,7 @@ namespace Emby.Server.Implementations.EntryPoints
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IProviderManager _providerManager;
         private readonly IItemService _itemService;
-        private readonly ICollectionManager _libraryCollectionManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
         private readonly ILogger<LibraryChangedNotifier> _logger;
@@ -57,7 +57,7 @@ namespace Emby.Server.Implementations.EntryPoints
             ILogger<LibraryChangedNotifier> logger,
             IProviderManager providerManager,
             IItemService itemService,
-            ICollectionManager libraryCollectionManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _libraryManager = libraryManager;
             _configurationManager = configurationManager;
@@ -66,7 +66,7 @@ namespace Emby.Server.Implementations.EntryPoints
             _logger = logger;
             _providerManager = providerManager;
             _itemService = itemService;
-            _libraryCollectionManager = libraryCollectionManager;
+            _virtualFolderManager = virtualFolderManager;
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Emby.Server.Implementations.EntryPoints
             {
             }
 
-            var collectionFolders = _libraryCollectionManager.GetCollectionFolders(item);
+            var collectionFolders = _virtualFolderManager.GetCollectionFolders(item);
 
             foreach (var collectionFolder in collectionFolders)
             {

@@ -480,9 +480,9 @@ namespace MediaBrowser.Controller.Entities
 
         protected static IItemPathResolver ItemPathResolver { get; set; }
 
-        protected static IVirtualFolderManager LibraryOptionsManager { get; set; }
+        protected static IVirtualFolderManager VirtualFolderManager { get; set; }
 
-        protected static ICollectionManager LibraryCollectionManager { get; set; }
+        protected static ICollectionManager CollectionManager { get; set; }
 
         protected static IItemContentTypeProvider ItemContentTypeProvider { get; set; }
 
@@ -846,8 +846,8 @@ namespace MediaBrowser.Controller.Entities
             ItemService = itemService;
             LibraryRootFolderManager = libraryRootFolderManager;
             ItemPathResolver = itemPathResolver;
-            LibraryOptionsManager = virtualFolderManager;
-            LibraryCollectionManager = libraryCollectionManager;
+            VirtualFolderManager = virtualFolderManager;
+            CollectionManager = libraryCollectionManager;
             ItemContentTypeProvider = itemContentTypeProvider;
             UserViewBuilder = userViewBuilder;
             ItemQueryService = itemQueryService;
@@ -889,7 +889,7 @@ namespace MediaBrowser.Controller.Entities
                 return allowed.Contains(ChannelId);
             }
 
-            var collectionFolders = LibraryCollectionManager.GetCollectionFolders(this, allCollectionFolders);
+            var collectionFolders = VirtualFolderManager.GetCollectionFolders(this, allCollectionFolders);
 
             foreach (var folder in collectionFolders)
             {
@@ -1382,7 +1382,7 @@ namespace MediaBrowser.Controller.Entities
                     return true;
                 }
 
-                var itemCollectionFolders = LibraryCollectionManager.GetCollectionFolders(this).Select(i => i.Id).ToList();
+                var itemCollectionFolders = VirtualFolderManager.GetCollectionFolders(this).Select(i => i.Id).ToList();
 
                 if (itemCollectionFolders.Count > 0)
                 {
@@ -1521,14 +1521,14 @@ namespace MediaBrowser.Controller.Entities
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryCollectionManager.GetCollectionFolders(this)
+                lang = VirtualFolderManager.GetCollectionFolders(this)
                     .Select(i => i.PreferredMetadataLanguage)
                     .FirstOrDefault(i => !string.IsNullOrEmpty(i));
             }
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryOptionsManager.GetLibraryOptions(this).PreferredMetadataLanguage;
+                lang = VirtualFolderManager.GetLibraryOptions(this).PreferredMetadataLanguage;
             }
 
             if (string.IsNullOrEmpty(lang))
@@ -1556,14 +1556,14 @@ namespace MediaBrowser.Controller.Entities
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryCollectionManager.GetCollectionFolders(this)
+                lang = VirtualFolderManager.GetCollectionFolders(this)
                     .Select(i => i.PreferredMetadataCountryCode)
                     .FirstOrDefault(i => !string.IsNullOrEmpty(i));
             }
 
             if (string.IsNullOrEmpty(lang))
             {
-                lang = LibraryOptionsManager.GetLibraryOptions(this).MetadataCountryCode;
+                lang = VirtualFolderManager.GetLibraryOptions(this).MetadataCountryCode;
             }
 
             if (string.IsNullOrEmpty(lang))
@@ -1581,7 +1581,7 @@ namespace MediaBrowser.Controller.Entities
                 return false;
             }
 
-            var libraryOptions = LibraryOptionsManager.GetLibraryOptions(this);
+            var libraryOptions = VirtualFolderManager.GetLibraryOptions(this);
 
             return libraryOptions.SaveLocalMetadata;
         }
@@ -2548,7 +2548,7 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual IEnumerable<Guid> GetAncestorIds()
         {
-            return GetParents().Select(i => i.Id).Concat(LibraryCollectionManager.GetCollectionFolders(this).Select(i => i.Id));
+            return GetParents().Select(i => i.Id).Concat(VirtualFolderManager.GetCollectionFolders(this).Select(i => i.Id));
         }
 
         public BaseItem GetTopParent()

@@ -22,9 +22,7 @@ namespace Emby.Server.Implementations.IO
         /// Initializes a new instance of the <see cref="LibraryMonitorOrchestrator"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        public LibraryMonitorOrchestrator(
-            ILogger<LibraryMonitorOrchestrator> logger
-            )
+        public LibraryMonitorOrchestrator(ILogger<LibraryMonitorOrchestrator> logger)
         {
             _restartTimeoutTimer.Enabled = true;
             _restartTimeoutTimer.Elapsed += RestartTimeoutTimerElapsed;

@@ -165,8 +165,6 @@ namespace MediaBrowser.Controller.Entities
             }
         }
 
-        public static Collections.ICollectionManager CollectionManager { get; set; }
-
         public override bool CanDelete()
         {
             if (IsRoot)
@@ -603,7 +601,7 @@ namespace MediaBrowser.Controller.Entities
         protected virtual IEnumerable<BaseItem> GetNonCachedChildren(IDirectoryService directoryService)
         {
             var collectionType = ItemContentTypeProvider.GetContentType(this);
-            var libraryOptions = LibraryOptionsManager.GetLibraryOptions(this);
+            var libraryOptions = VirtualFolderManager.GetLibraryOptions(this);
 
             return ItemPathResolver.ResolvePaths(GetFileSystemChildren(directoryService), this, libraryOptions, collectionType);
         }
@@ -1490,7 +1488,7 @@ namespace MediaBrowser.Controller.Entities
                     else
                     {
                         var itemCollectionFolderIds =
-                            LibraryCollectionManager.GetCollectionFolders(childOwner, allUserRootChildren).Select(f => f.Id);
+                            VirtualFolderManager.GetCollectionFolders(childOwner, allUserRootChildren).Select(f => f.Id);
 
                         if (!itemCollectionFolderIds.Any(collectionFolderIds.Contains))
                         {

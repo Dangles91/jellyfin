@@ -22,7 +22,6 @@ namespace MediaBrowser.Controller.Library
         /// <param name="options">The library options of the new folder.</param>
         /// <param name="refreshLibrary">Whether to refresh the library.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-
         Task AddVirtualFolder(string name, CollectionTypeOptions? collectionType, LibraryOptions options, bool refreshLibrary);
 
         /// <summary>
@@ -88,12 +87,33 @@ namespace MediaBrowser.Controller.Library
         /// <param name="options">The library options.</param>
         void UpdateLibraryOptions(BaseItem item, LibraryOptions? options);
 
+        /// <summary>
+        /// Remove a virtual folder.
+        /// </summary>
+        /// <param name="name">The name of the virtual folder.</param>
+        /// <param name="refreshLibrary">Whether to refresh the library after removing.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task RemoveVirtualFolder(string name, bool refreshLibrary);
 
+        /// <summary>
+        /// Add a media path to a virtual folder. Used for library folders.
+        /// </summary>
+        /// <param name="virtualFolderName">The name of the virtual folder.</param>
+        /// <param name="mediaPath">The media path to add.</param>
         void AddMediaPath(string virtualFolderName, MediaPathInfo mediaPath);
 
+        /// <summary>
+        /// Update a virtual media path on a virtual folder.
+        /// </summary>
+        /// <param name="virtualFolderName">The virutal folder to update.</param>
+        /// <param name="mediaPath">The media path to update.</param>
         void UpdateMediaPath(string virtualFolderName, MediaPathInfo mediaPath);
 
+        /// <summary>
+        /// Remove a media path from a virtual folder.
+        /// </summary>
+        /// <param name="virtualFolderName">The name of the virtual folder to update.</param>
+        /// <param name="mediaPath">The media path to remove.</param>
         void RemoveMediaPath(string virtualFolderName, string mediaPath);
     }
 }

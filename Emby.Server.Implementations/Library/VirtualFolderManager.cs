@@ -23,7 +23,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.Library
 {
-
     /// <summary>
     /// Manage virtual folders and their options.
     /// </summary>
@@ -85,6 +84,8 @@ namespace Emby.Server.Implementations.Library
             var topLibraryFolders = _libraryRootFolderManager.GetUserRootFolder().Children.ToList();
 
             _logger.LogDebug("Getting refreshQueue");
+
+            // TODO: move this out of ProviderManager.
             var refreshQueue = includeRefreshState ? ProviderManager.GetRefreshQueue() : null;
 
             return _fileSystem.GetDirectoryPaths(_configurationManager.ApplicationPaths.DefaultUserViewsPath)
@@ -486,7 +487,7 @@ namespace Emby.Server.Implementations.Library
                 throw new ArgumentNullException(nameof(path));
             }
 
-            List<NameValuePair> removeList = null;
+            List<NameValuePair> removeList = new();
 
             foreach (var contentType in _configurationManager.Configuration.ContentTypes)
             {
@@ -494,11 +495,11 @@ namespace Emby.Server.Implementations.Library
                     || _fileSystem.AreEqual(path, contentType.Name)
                     || _fileSystem.ContainsSubPath(path, contentType.Name))
                 {
-                    (removeList ??= new()).Add(contentType);
+                    removeList.Add(contentType);
                 }
             }
 
-            if (removeList is not null)
+            if (removeList.Any())
             {
                 _configurationManager.Configuration.ContentTypes = _configurationManager.Configuration.ContentTypes
                     .Except(removeList)
@@ -508,6 +509,7 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
+        /// <inheritdoc/>
         public void RemoveMediaPath(string virtualFolderName, string mediaPath)
         {
             ArgumentException.ThrowIfNullOrEmpty(mediaPath);
@@ -523,7 +525,7 @@ namespace Emby.Server.Implementations.Library
 
             var shortcut = _fileSystem.GetFilePaths(virtualFolderPath, true)
                 .Where(i => string.Equals(ShortcutFileExtension, Path.GetExtension(i), StringComparison.OrdinalIgnoreCase))
-                .FirstOrDefault(f => _fileSystem.ExpandVirtualPath(_fileSystem.ResolveShortcut(f)).Equals(mediaPath, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(f => _fileSystem.ExpandVirtualPath(_fileSystem.ResolveShortcut(f)!).Equals(mediaPath, StringComparison.OrdinalIgnoreCase));
 
             if (!string.IsNullOrEmpty(shortcut))
             {
@@ -540,6 +542,7 @@ namespace Emby.Server.Implementations.Library
             SaveLibraryOptions(virtualFolderPath, libraryOptions);
         }
 
+        /// <inheritdoc/>
         public void UpdateMediaPath(string virtualFolderName, MediaPathInfo mediaPath)
         {
             ArgumentNullException.ThrowIfNull(mediaPath);
@@ -566,7 +569,7 @@ namespace Emby.Server.Implementations.Library
         private void SyncLibraryOptionsToLocations(string virtualFolderPath, LibraryOptions options)
         {
             var topLibraryFolders = _libraryRootFolderManager.GetUserRootFolder().Children.ToList();
-            var info = GetVirtualFolderInfo(virtualFolderPath, topLibraryFolders, null);
+            var info = GetVirtualFolderInfo(virtualFolderPath, topLibraryFolders, null!);
 
             if (info.Locations.Length > 0 && info.Locations.Length != options.PathInfos.Length)
             {

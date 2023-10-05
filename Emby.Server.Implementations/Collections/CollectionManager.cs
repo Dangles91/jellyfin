@@ -312,7 +312,6 @@ namespace Emby.Server.Implementations.Collections
             ItemsRemovedFromCollection?.Invoke(this, new CollectionModifiedEventArgs(collection, itemList));
         }
 
-
         /// <inheritdoc />
         public IEnumerable<BaseItem> CollapseItemsWithinBoxSets(IEnumerable<BaseItem> items, User user)
         {

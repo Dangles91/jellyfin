@@ -55,7 +55,7 @@ namespace Emby.Server.Implementations.Dto
         private readonly IItemService _itemService;
         private readonly IItemQueryService _itemQueryService;
         private readonly IItemPathResolver _itemPathResolver;
-        private readonly ICollectionManager _libraryCollectionManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
 
         public DtoService(
             ILogger<DtoService> logger,
@@ -70,7 +70,7 @@ namespace Emby.Server.Implementations.Dto
             IItemService itemService,
             IItemQueryService itemQueryService,
             IItemPathResolver itemPathResolver,
-            ICollectionManager libraryCollectionManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _logger = logger;
             _libraryManager = libraryManager;
@@ -84,7 +84,7 @@ namespace Emby.Server.Implementations.Dto
             _itemService = itemService;
             _itemQueryService = itemQueryService;
             _itemPathResolver = itemPathResolver;
-            _libraryCollectionManager = libraryCollectionManager;
+            _virtualFolderManager = virtualFolderManager;
         }
 
         private ILiveTvManager LivetvManager => _livetvManagerFactory.Value;
@@ -1287,7 +1287,7 @@ namespace Emby.Server.Implementations.Dto
 
             if (parent is null && originalItem is not UserRootFolder && originalItem is not UserView && originalItem is not AggregateFolder && originalItem is not ICollectionFolder && originalItem is not Channel)
             {
-                parent = _libraryCollectionManager.GetCollectionFolders(originalItem).FirstOrDefault();
+                parent = _virtualFolderManager.GetCollectionFolders(originalItem).FirstOrDefault();
             }
 
             return parent;

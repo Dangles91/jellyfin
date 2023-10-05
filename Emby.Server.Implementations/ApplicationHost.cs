@@ -531,11 +531,10 @@ namespace Emby.Server.Implementations
             serviceCollection.AddTransient(provider => new Lazy<IUserViewManager>(provider.GetRequiredService<IUserViewManager>));
             serviceCollection.AddSingleton<ILibraryManager, LibraryManager>();
             serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
-            serviceCollection.AddSingleton<IVirtualFolderManager, LibraryOptionsManager>();
             serviceCollection.AddSingleton<ILibraryItemIdGenerator, Md5LibraryItemIdGenerator>();
             serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
             serviceCollection.AddSingleton<ILibraryRootFolderManager, LibraryRootFolderManager>();
-            serviceCollection.AddSingleton<IVirtualFolderManager, LibraryOptionsManager>();
+            serviceCollection.AddSingleton<IVirtualFolderManager, VirtualFolderManager>();
             serviceCollection.AddSingleton<IItemResolveArgsFactory, ItemResolveArgsFactory>();
             serviceCollection.AddSingleton<IResolverIgnoreRulesProvider, ResolverIgnoreRulesProvider>();
 
@@ -703,7 +702,6 @@ namespace Emby.Server.Implementations
             Video.LiveTvManager = Resolve<ILiveTvManager>();
             Folder.UserViewManager = Resolve<IUserViewManager>();
             UserView.TVSeriesManager = Resolve<ITVSeriesManager>();
-            UserView.CollectionManager = Resolve<MediaBrowser.Controller.Collections.ICollectionManager>();
         }
 
         /// <summary>

@@ -65,6 +65,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
         private readonly IMediaEncoder _mediaEncoder;
         private readonly IItemService _itemService;
         private readonly IItemQueryService _itemQueryService;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IMediaSourceManager _mediaSourceManager;
         private readonly IStreamHelper _streamHelper;
 
@@ -92,7 +93,8 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             IProviderManager providerManager,
             IMediaEncoder mediaEncoder,
             IItemService itemService,
-            IItemQueryService itemQueryService)
+            IItemQueryService itemQueryService,
+            IVirtualFolderManager virtualFolderManager)
         {
             Current = this;
 
@@ -107,6 +109,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             _mediaEncoder = mediaEncoder;
             _itemService = itemService;
             _itemQueryService = itemQueryService;
+            _virtualFolderManager = virtualFolderManager;
             _liveTvManager = (LiveTvManager)liveTvManager;
             _mediaSourceManager = mediaSourceManager;
             _streamHelper = streamHelper;
@@ -166,7 +169,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             try
             {
                 var recordingFolders = GetRecordingFolders().ToArray();
-                var virtualFolders = _libraryManager.GetVirtualFolders();
+                var virtualFolders = _virtualFolderManager.GetVirtualFolders();
 
                 var allExistingPaths = virtualFolders.SelectMany(i => i.Locations).ToList();
 
@@ -191,7 +194,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                     };
                     try
                     {
-                        await _libraryManager.AddVirtualFolder(recordingFolder.Name, recordingFolder.CollectionType, libraryOptions, true).ConfigureAwait(false);
+                        await _virtualFolderManager.AddVirtualFolder(recordingFolder.Name, recordingFolder.CollectionType, libraryOptions, true).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -230,7 +233,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             _logger.LogDebug("Removing path from library: {0}", path);
 
             var requiresRefresh = false;
-            var virtualFolders = _libraryManager.GetVirtualFolders();
+            var virtualFolders = _virtualFolderManager.GetVirtualFolders();
 
             foreach (var virtualFolder in virtualFolders)
             {
@@ -244,7 +247,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                     // remove entire virtual folder
                     try
                     {
-                        await _libraryManager.RemoveVirtualFolder(virtualFolder.Name, true).ConfigureAwait(false);
+                        await _virtualFolderManager.RemoveVirtualFolder(virtualFolder.Name, true).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -255,7 +258,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                 {
                     try
                     {
-                        _libraryManager.RemoveMediaPath(virtualFolder.Name, path);
+                        _virtualFolderManager.RemoveMediaPath(virtualFolder.Name, path);
                         requiresRefresh = true;
                     }
                     catch (Exception ex)

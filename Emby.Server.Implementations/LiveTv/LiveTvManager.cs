@@ -60,7 +60,7 @@ namespace Emby.Server.Implementations.LiveTv
         private readonly IItemService _itemService;
         private readonly IItemQueryService _itemQueryService;
         private readonly ILibraryViewService _libraryViewService;
-        private readonly ICollectionManager _libraryCollectionManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private ILiveTvService[] _services = Array.Empty<ILiveTvService>();
         private ITunerHost[] _tunerHosts = Array.Empty<ITunerHost>();
         private IListingsProvider[] _listingProviders = Array.Empty<IListingsProvider>();
@@ -79,7 +79,7 @@ namespace Emby.Server.Implementations.LiveTv
             IItemService itemService,
             IItemQueryService itemQueryService,
             ILibraryViewService libraryViewService,
-            ICollectionManager libraryCollectionManager)
+            IVirtualFolderManager virtualFolderManager)
         {
             _config = config;
             _logger = logger;
@@ -94,7 +94,7 @@ namespace Emby.Server.Implementations.LiveTv
             _itemService = itemService;
             _itemQueryService = itemQueryService;
             _libraryViewService = libraryViewService;
-            _libraryCollectionManager = libraryCollectionManager;
+            _virtualFolderManager = virtualFolderManager;
         }
 
         public event EventHandler<GenericEventArgs<TimerEventInfo>> SeriesTimerCancelled;
@@ -2395,7 +2395,7 @@ namespace Emby.Server.Implementations.LiveTv
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(i => _itemQueryService.FindItemByPath(i, true))
                 .Where(i => i is not null && i.IsVisibleStandalone(user))
-                .SelectMany(i => _libraryCollectionManager.GetCollectionFolders(i))
+                .SelectMany(i => _virtualFolderManager.GetCollectionFolders(i))
                 .DistinctBy(x => x.Id)
                 .OrderBy(i => i.SortName)
                 .ToList();

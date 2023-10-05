@@ -86,7 +86,7 @@ namespace MediaBrowser.Controller.Entities.TV
 
         public override string CreatePresentationUniqueKey()
         {
-            if (LibraryOptionsManager.GetLibraryOptions(this).EnableAutomaticSeriesGrouping)
+            if (VirtualFolderManager.GetLibraryOptions(this).EnableAutomaticSeriesGrouping)
             {
                 var userdatakeys = GetUserDataKeys();
 
@@ -107,7 +107,7 @@ namespace MediaBrowser.Controller.Entities.TV
                 key += "-" + lang;
             }
 
-            var folders = LibraryCollectionManager.GetCollectionFolders(this)
+            var folders = VirtualFolderManager.GetCollectionFolders(this)
                 .Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture))
                 .ToArray();
 
