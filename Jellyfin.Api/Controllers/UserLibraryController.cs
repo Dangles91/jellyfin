@@ -35,7 +35,7 @@ public class UserLibraryController : BaseJellyfinApiController
     private readonly IUserDataManager _userDataRepository;
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
-    private readonly IUserViewManager _userViewManager;
+    private readonly ILatestItemsService _latestItemsService;
     private readonly IFileSystem _fileSystem;
     private readonly IItemService _itemService;
     private readonly ILyricManager _lyricManager;
@@ -47,7 +47,7 @@ public class UserLibraryController : BaseJellyfinApiController
     /// <param name="userDataRepository">Instance of the <see cref="IUserDataManager"/> interface.</param>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
-    /// <param name="userViewManager">Instance of the <see cref="IUserViewManager"/> interface.</param>
+    /// <param name="latestItemsService">latest item service.</param>
     /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     /// <param name="lyricManager">Instance of the <see cref="ILyricManager"/> interface.</param>
@@ -56,7 +56,7 @@ public class UserLibraryController : BaseJellyfinApiController
         IUserDataManager userDataRepository,
         ILibraryManager libraryManager,
         IDtoService dtoService,
-        IUserViewManager userViewManager,
+        ILatestItemsService latestItemsService,
         IFileSystem fileSystem,
         IItemService itemService,
         ILyricManager lyricManager)
@@ -65,7 +65,7 @@ public class UserLibraryController : BaseJellyfinApiController
         _userDataRepository = userDataRepository;
         _libraryManager = libraryManager;
         _dtoService = dtoService;
-        _userViewManager = userViewManager;
+        _latestItemsService = latestItemsService;
         _fileSystem = fileSystem;
         _itemService = itemService;
         _lyricManager = lyricManager;
@@ -452,7 +452,7 @@ public class UserLibraryController : BaseJellyfinApiController
             .AddClientFields(User)
             .AddAdditionalDtoOptions(enableImages, enableUserData, imageTypeLimit, enableImageTypes);
 
-        var list = _userViewManager.GetLatestItems(
+        var list = _latestItemsService.GetLatestItems(
             new LatestItemsQuery
             {
                 GroupItems = groupItems,

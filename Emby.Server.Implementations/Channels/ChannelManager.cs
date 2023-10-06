@@ -48,10 +48,10 @@ namespace Emby.Server.Implementations.Channels
         private readonly ILogger<ChannelManager> _logger;
         private readonly IServerConfigurationManager _config;
         private readonly IFileSystem _fileSystem;
-        private readonly IProviderManager _providerManager;
         private readonly IMemoryCache _memoryCache;
         private readonly IItemService _itemService;
         private readonly IItemQueryService _itemQueryService;
+        private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly SemaphoreSlim _resourcePool = new SemaphoreSlim(1, 1);
         private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
@@ -67,11 +67,11 @@ namespace Emby.Server.Implementations.Channels
         /// <param name="config">The server configuration manager.</param>
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="userDataManager">The user data manager.</param>
-        /// <param name="providerManager">The provider manager.</param>
         /// <param name="memoryCache">The memory cache.</param>
         /// <param name="channels">The channels.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
         /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> interface.</param>
+        /// <param name="itemRefreshTaskManager">The instance of <see cref="IItemRefreshTaskManager"/> interface.</param>
         /// <param name="libraryItemIdGenerator">The instance of <see cref="ILibraryItemIdGenerator"/> interface.</param>
         public ChannelManager(
             IUserManager userManager,
@@ -81,11 +81,11 @@ namespace Emby.Server.Implementations.Channels
             IServerConfigurationManager config,
             IFileSystem fileSystem,
             IUserDataManager userDataManager,
-            IProviderManager providerManager,
             IMemoryCache memoryCache,
             IEnumerable<IChannel> channels,
             IItemService itemService,
             IItemQueryService itemQueryService,
+            IItemRefreshTaskManager itemRefreshTaskManager,
             ILibraryItemIdGenerator libraryItemIdGenerator)
         {
             _userManager = userManager;
@@ -95,10 +95,10 @@ namespace Emby.Server.Implementations.Channels
             _config = config;
             _fileSystem = fileSystem;
             _userDataManager = userDataManager;
-            _providerManager = providerManager;
             _memoryCache = memoryCache;
             _itemService = itemService;
             _itemQueryService = itemQueryService;
+            _itemRefreshTaskManager = itemRefreshTaskManager;
             _libraryItemIdGenerator = libraryItemIdGenerator;
             Channels = channels.ToArray();
 
@@ -1193,7 +1193,7 @@ namespace Emby.Server.Implementations.Channels
 
             if (isNew || forceUpdate || item.DateLastRefreshed == default)
             {
-                _providerManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.Normal);
+                _itemRefreshTaskManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.Normal);
             }
 
             return item;

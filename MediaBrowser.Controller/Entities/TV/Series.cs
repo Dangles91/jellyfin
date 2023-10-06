@@ -353,7 +353,7 @@ namespace MediaBrowser.Controller.Entities.TV
             }
 
             refreshOptions = new MetadataRefreshOptions(refreshOptions);
-            await ProviderManager.RefreshSingleItem(this, refreshOptions, cancellationToken).ConfigureAwait(false);
+            await ItemRefresher.RefreshSingleItem(this, refreshOptions, cancellationToken).ConfigureAwait(false);
         }
 
         public List<BaseItem> GetSeasonEpisodes(Season parentSeason, User user, DtoOptions options)

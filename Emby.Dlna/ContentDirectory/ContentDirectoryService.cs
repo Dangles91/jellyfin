@@ -31,11 +31,11 @@ namespace Emby.Dlna.ContentDirectory
         private readonly IUserManager _userManager;
         private readonly ILocalizationManager _localization;
         private readonly IMediaSourceManager _mediaSourceManager;
-        private readonly IUserViewManager _userViewManager;
         private readonly IMediaEncoder _mediaEncoder;
         private readonly ITVSeriesManager _tvSeriesManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly IItemService _itemService;
+        private readonly ILatestItemsService _latestItemsService;
         private readonly IItemQueryService _itemQueryService;
 
         /// <summary>
@@ -50,11 +50,11 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="httpClient">The <see cref="IHttpClientFactory"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="localization">The <see cref="ILocalizationManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
-        /// <param name="userViewManager">The <see cref="IUserViewManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="libraryRootFolderManager">The <see cref="ILibraryRootFolderManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="itemService">The <see cref="IItemService"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
+        /// <param name="latestItemsService">latest item service.</param>
         /// <param name="itemQueryService">The <see cref="IItemQueryService"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         public ContentDirectoryService(
             IDlnaManager dlna,
@@ -66,11 +66,11 @@ namespace Emby.Dlna.ContentDirectory
             IHttpClientFactory httpClient,
             ILocalizationManager localization,
             IMediaSourceManager mediaSourceManager,
-            IUserViewManager userViewManager,
             IMediaEncoder mediaEncoder,
             ITVSeriesManager tvSeriesManager,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemService itemService,
+            ILatestItemsService latestItemsService,
             IItemQueryService itemQueryService)
             : base(logger, httpClient)
         {
@@ -81,11 +81,11 @@ namespace Emby.Dlna.ContentDirectory
             _userManager = userManager;
             _localization = localization;
             _mediaSourceManager = mediaSourceManager;
-            _userViewManager = userViewManager;
             _mediaEncoder = mediaEncoder;
             _tvSeriesManager = tvSeriesManager;
             _libraryRootFolderManager = libraryRootFolderManager;
             _itemService = itemService;
+            _latestItemsService = latestItemsService;
             _itemQueryService = itemQueryService;
         }
 
@@ -131,10 +131,10 @@ namespace Emby.Dlna.ContentDirectory
                 _config,
                 _localization,
                 _mediaSourceManager,
-                _userViewManager,
                 _mediaEncoder,
                 _tvSeriesManager,
                 _itemService,
+                _latestItemsService,
                 _libraryRootFolderManager,
                 _itemQueryService)
                 .ProcessControlRequestAsync(request);

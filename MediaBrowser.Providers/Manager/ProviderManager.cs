@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,15 +8,11 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Data.Enums;
-using Jellyfin.Data.Events;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Net;
-using MediaBrowser.Common.Progress;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.BaseItemManager;
 using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
@@ -43,32 +38,24 @@ namespace MediaBrowser.Providers.Manager
     /// <summary>
     /// Class ProviderManager.
     /// </summary>
-    public class ProviderManager : IProviderManager, IDisposable
+    public class ProviderManager : IProviderManager
     {
-        private readonly object _refreshQueueLock = new();
         private readonly ILogger<ProviderManager> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILibraryMonitor _libraryMonitor;
         private readonly IFileSystem _fileSystem;
         private readonly IServerApplicationPaths _appPaths;
-        private readonly ILibraryManager _libraryManager;
         private readonly ISubtitleManager _subtitleManager;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IBaseItemManager _baseItemManager;
         private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IItemService _itemService;
-        private readonly IItemQueryService _itemQueryService;
-        private readonly ConcurrentDictionary<Guid, double> _activeRefreshes = new();
-        private readonly CancellationTokenSource _disposeCancellationTokenSource = new();
-        private readonly PriorityQueue<(Guid ItemId, MetadataRefreshOptions RefreshOptions), RefreshPriority> _refreshQueue = new();
 
         private IImageProvider[] _imageProviders = Array.Empty<IImageProvider>();
         private IMetadataService[] _metadataServices = Array.Empty<IMetadataService>();
         private IMetadataProvider[] _metadataProviders = Array.Empty<IMetadataProvider>();
         private IMetadataSaver[] _savers = Array.Empty<IMetadataSaver>();
         private IExternalId[] _externalIds = Array.Empty<IExternalId>();
-        private bool _isProcessingRefreshQueue;
-        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProviderManager"/> class.
@@ -80,11 +67,9 @@ namespace MediaBrowser.Providers.Manager
         /// <param name="logger">The logger.</param>
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="appPaths">The server application paths.</param>
-        /// <param name="libraryManager">The library manager.</param>
         /// <param name="baseItemManager">The BaseItem manager.</param>
         /// <param name="virtualFolderManager">The instance of <see cref="IVirtualFolderManager"/> interface.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> interface.</param>
-        /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> interface.</param>
         public ProviderManager(
             IHttpClientFactory httpClientFactory,
             ISubtitleManager subtitleManager,
@@ -93,11 +78,9 @@ namespace MediaBrowser.Providers.Manager
             ILogger<ProviderManager> logger,
             IFileSystem fileSystem,
             IServerApplicationPaths appPaths,
-            ILibraryManager libraryManager,
             IBaseItemManager baseItemManager,
             IVirtualFolderManager virtualFolderManager,
-            IItemService itemService,
-            IItemQueryService itemQueryService)
+            IItemService itemService)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -105,22 +88,11 @@ namespace MediaBrowser.Providers.Manager
             _libraryMonitor = libraryMonitor;
             _fileSystem = fileSystem;
             _appPaths = appPaths;
-            _libraryManager = libraryManager;
             _subtitleManager = subtitleManager;
             _baseItemManager = baseItemManager;
             _virtualFolderManager = virtualFolderManager;
             _itemService = itemService;
-            _itemQueryService = itemQueryService;
         }
-
-        /// <inheritdoc/>
-        public event EventHandler<GenericEventArgs<BaseItem>>? RefreshStarted;
-
-        /// <inheritdoc/>
-        public event EventHandler<GenericEventArgs<BaseItem>>? RefreshCompleted;
-
-        /// <inheritdoc/>
-        public event EventHandler<GenericEventArgs<Tuple<BaseItem, double>>>? RefreshProgress;
 
         /// <inheritdoc/>
         public void AddParts(
@@ -136,23 +108,6 @@ namespace MediaBrowser.Providers.Manager
             _externalIds = externalIds.OrderBy(i => i.ProviderName).ToArray();
 
             _savers = metadataSavers.ToArray();
-        }
-
-        /// <inheritdoc/>
-        public Task<ItemUpdateType> RefreshSingleItem(BaseItem item, MetadataRefreshOptions options, CancellationToken cancellationToken)
-        {
-            var type = item.GetType();
-
-            var service = _metadataServices.FirstOrDefault(current => current.CanRefreshPrimary(type))
-                ?? _metadataServices.FirstOrDefault(current => current.CanRefresh(item));
-
-            if (service is null)
-            {
-                _logger.LogError("Unable to find a metadata service for item of type {TypeName}", type.Name);
-                return Task.FromResult(ItemUpdateType.None);
-            }
-
-            return service.RefreshMetadata(item, options, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -407,6 +362,14 @@ namespace MediaBrowser.Providers.Manager
                         _ => int.MaxValue
                     })
                 .ThenBy(GetDefaultOrder);
+        }
+
+        /// <inheritdoc />
+        public IMetadataService? GetMetadataServiceFor<T>(T item)
+            where T : BaseItem
+        {
+            return _metadataServices.FirstOrDefault(current => current.CanRefreshPrimary(typeof(T)))
+                ?? _metadataServices.FirstOrDefault(current => current.CanRefresh(item));
         }
 
         private bool CanRefreshMetadata(
@@ -869,250 +832,6 @@ namespace MediaBrowser.Providers.Manager
                     key: i.Key,
                     type: i.Type,
                     urlFormatString: i.UrlFormatString));
-        }
-
-        /// <inheritdoc/>
-        public HashSet<Guid> GetRefreshQueue()
-        {
-            lock (_refreshQueueLock)
-            {
-                return _refreshQueue.UnorderedItems.Select(x => x.Element.ItemId).ToHashSet();
-            }
-        }
-
-        /// <inheritdoc/>
-        public void OnRefreshStart(BaseItem item)
-        {
-            _logger.LogDebug("OnRefreshStart {Item:N}", item.Id);
-            _activeRefreshes[item.Id] = 0;
-            try
-            {
-                RefreshStarted?.Invoke(this, new GenericEventArgs<BaseItem>(item));
-            }
-            catch (Exception ex)
-            {
-                // EventHandlers should never propagate exceptions, but we have little control over plugins...
-                _logger.LogError(ex, "Invoking {RefreshEvent} event handlers failed", nameof(RefreshStarted));
-            }
-        }
-
-        /// <inheritdoc/>
-        public void OnRefreshComplete(BaseItem item)
-        {
-            _logger.LogDebug("OnRefreshComplete {Item:N}", item.Id);
-            _activeRefreshes.TryRemove(item.Id, out _);
-
-            try
-            {
-                RefreshCompleted?.Invoke(this, new GenericEventArgs<BaseItem>(item));
-            }
-            catch (Exception ex)
-            {
-                // EventHandlers should never propagate exceptions, but we have little control over plugins...
-                _logger.LogError(ex, "Invoking {RefreshEvent} event handlers failed", nameof(RefreshCompleted));
-            }
-        }
-
-        /// <inheritdoc/>
-        public double? GetRefreshProgress(Guid id)
-        {
-            if (_activeRefreshes.TryGetValue(id, out double value))
-            {
-                return value;
-            }
-
-            return null;
-        }
-
-        /// <inheritdoc/>
-        public void OnRefreshProgress(BaseItem item, double progress)
-        {
-            var id = item.Id;
-            _logger.LogDebug("OnRefreshProgress {Id:N} {Progress}", id, progress);
-
-            // TODO: Need to hunt down the conditions for this happening
-            _activeRefreshes.AddOrUpdate(
-                id,
-                _ => throw new InvalidOperationException(
-                    string.Format(
-                        CultureInfo.InvariantCulture,
-                        "Cannot update refresh progress of item '{0}' ({1}) because a refresh for this item is not running",
-                        item.GetType().Name,
-                        item.Id.ToString("N", CultureInfo.InvariantCulture))),
-                (_, _) => progress);
-
-            try
-            {
-                RefreshProgress?.Invoke(this, new GenericEventArgs<Tuple<BaseItem, double>>(new Tuple<BaseItem, double>(item, progress)));
-            }
-            catch (Exception ex)
-            {
-                // EventHandlers should never propagate exceptions, but we have little control over plugins...
-                _logger.LogError(ex, "Invoking {RefreshEvent} event handlers failed", nameof(RefreshProgress));
-            }
-        }
-
-        /// <inheritdoc/>
-        public void QueueRefresh(Guid itemId, MetadataRefreshOptions options, RefreshPriority priority)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _refreshQueue.Enqueue((itemId, options), priority);
-
-            lock (_refreshQueueLock)
-            {
-                if (!_isProcessingRefreshQueue)
-                {
-                    _isProcessingRefreshQueue = true;
-                    Task.Run(StartProcessingRefreshQueue);
-                }
-            }
-        }
-
-        private async Task StartProcessingRefreshQueue()
-        {
-            var libraryManager = _libraryManager;
-
-            if (_disposed)
-            {
-                return;
-            }
-
-            var cancellationToken = _disposeCancellationTokenSource.Token;
-
-            while (_refreshQueue.TryDequeue(out var refreshItem, out _))
-            {
-                if (_disposed)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var item = libraryManager.GetItemById(refreshItem.ItemId);
-                    if (item is null)
-                    {
-                        continue;
-                    }
-
-                    var task = item is MusicArtist artist
-                        ? RefreshArtist(artist, refreshItem.RefreshOptions, cancellationToken)
-                        : RefreshItem(item, refreshItem.RefreshOptions, cancellationToken);
-
-                    await task.ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error refreshing item");
-                }
-            }
-
-            lock (_refreshQueueLock)
-            {
-                _isProcessingRefreshQueue = false;
-            }
-        }
-
-        private async Task RefreshItem(BaseItem item, MetadataRefreshOptions options, CancellationToken cancellationToken)
-        {
-            await item.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
-
-            // Collection folders don't validate their children so we'll have to simulate that here
-            switch (item)
-            {
-                case CollectionFolder collectionFolder:
-                    await RefreshCollectionFolderChildren(options, collectionFolder, cancellationToken).ConfigureAwait(false);
-                    break;
-                case Folder folder:
-                    await folder.ValidateChildren(new SimpleProgress<double>(), options, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    break;
-            }
-        }
-
-        private async Task RefreshCollectionFolderChildren(MetadataRefreshOptions options, CollectionFolder collectionFolder, CancellationToken cancellationToken)
-        {
-            foreach (var child in collectionFolder.GetPhysicalFolders())
-            {
-                await child.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
-
-                await child.ValidateChildren(new SimpleProgress<double>(), options, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        private async Task RefreshArtist(MusicArtist item, MetadataRefreshOptions options, CancellationToken cancellationToken)
-        {
-            var albums = _itemQueryService
-                .GetItemList(new InternalItemsQuery
-                {
-                    IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
-                    ArtistIds = new[] { item.Id },
-                    DtoOptions = new DtoOptions(false)
-                    {
-                        EnableImages = false
-                    }
-                })
-                .OfType<MusicAlbum>();
-
-            var musicArtists = albums
-                .Select(i => i.MusicArtist)
-                .Where(i => i is not null);
-
-            var musicArtistRefreshTasks = musicArtists.Select(i => i.ValidateChildren(new SimpleProgress<double>(), options, true, cancellationToken));
-
-            await Task.WhenAll(musicArtistRefreshTasks).ConfigureAwait(false);
-
-            try
-            {
-                await item.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error refreshing library");
-            }
-        }
-
-        /// <inheritdoc/>
-        public Task RefreshFullItem(BaseItem item, MetadataRefreshOptions options, CancellationToken cancellationToken)
-        {
-            return RefreshItem(item, options, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Releases unmanaged and optionally managed resources.
-        /// </summary>
-        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            if (!_disposeCancellationTokenSource.IsCancellationRequested)
-            {
-                _disposeCancellationTokenSource.Cancel();
-            }
-
-            if (disposing)
-            {
-                _disposeCancellationTokenSource.Dispose();
-            }
-
-            _disposed = true;
         }
     }
 }

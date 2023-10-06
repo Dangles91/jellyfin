@@ -47,7 +47,6 @@ public class LiveTvController : BaseJellyfinApiController
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IConfigurationManager _configurationManager;
     private readonly TranscodingJobHelper _transcodingJobHelper;
-    private readonly ISessionManager _sessionManager;
     private readonly IItemService _itemService;
 
     /// <summary>
@@ -61,7 +60,6 @@ public class LiveTvController : BaseJellyfinApiController
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="configurationManager">Instance of the <see cref="IConfigurationManager"/> interface.</param>
     /// <param name="transcodingJobHelper">Instance of the <see cref="TranscodingJobHelper"/> class.</param>
-    /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
     public LiveTvController(
         ILiveTvManager liveTvManager,
@@ -72,7 +70,6 @@ public class LiveTvController : BaseJellyfinApiController
         IMediaSourceManager mediaSourceManager,
         IConfigurationManager configurationManager,
         TranscodingJobHelper transcodingJobHelper,
-        ISessionManager sessionManager,
         IItemService itemService)
     {
         _liveTvManager = liveTvManager;
@@ -83,7 +80,6 @@ public class LiveTvController : BaseJellyfinApiController
         _mediaSourceManager = mediaSourceManager;
         _configurationManager = configurationManager;
         _transcodingJobHelper = transcodingJobHelper;
-        _sessionManager = sessionManager;
         _itemService = itemService;
     }
 

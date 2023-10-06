@@ -22,38 +22,6 @@ namespace MediaBrowser.Controller.Providers
     /// </summary>
     public interface IProviderManager
     {
-        event EventHandler<GenericEventArgs<BaseItem>> RefreshStarted;
-
-        event EventHandler<GenericEventArgs<BaseItem>> RefreshCompleted;
-
-        event EventHandler<GenericEventArgs<Tuple<BaseItem, double>>> RefreshProgress;
-
-        /// <summary>
-        /// Queues the refresh.
-        /// </summary>
-        /// <param name="itemId">Item ID.</param>
-        /// <param name="options">MetadataRefreshOptions for operation.</param>
-        /// <param name="priority">RefreshPriority for operation.</param>
-        void QueueRefresh(Guid itemId, MetadataRefreshOptions options, RefreshPriority priority);
-
-        /// <summary>
-        /// Refreshes the full item.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <param name="options">The options.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        Task RefreshFullItem(BaseItem item, MetadataRefreshOptions options, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Refreshes the metadata.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <param name="options">The options.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        Task<ItemUpdateType> RefreshSingleItem(BaseItem item, MetadataRefreshOptions options, CancellationToken cancellationToken);
-
         /// <summary>
         /// Saves the image.
         /// </summary>
@@ -199,14 +167,13 @@ namespace MediaBrowser.Controller.Providers
             where TItemType : BaseItem, new()
             where TLookupType : ItemLookupInfo;
 
-        HashSet<Guid> GetRefreshQueue();
-
-        void OnRefreshStart(BaseItem item);
-
-        void OnRefreshProgress(BaseItem item, double progress);
-
-        void OnRefreshComplete(BaseItem item);
-
-        double? GetRefreshProgress(Guid id);
+        /// <summary>
+        /// Get the metadata service from the list of providers that supports this item.
+        /// </summary>
+        /// <typeparam name="T">The item type.</typeparam>
+        /// <param name="item">The item.</param>
+        /// <returns>The metadata service for the provided item.</returns>
+        IMetadataService GetMetadataServiceFor<T>(T item)
+            where T : BaseItem;
     }
 }

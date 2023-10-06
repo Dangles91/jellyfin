@@ -139,7 +139,7 @@ namespace MediaBrowser.Controller.Entities
 
             foreach (var folder in folders)
             {
-                var progress = ProviderManager.GetRefreshProgress(folder.Id);
+                var progress = ItemRefreshTaskManager.GetRefreshProgress(folder.Id);
                 if (progress.HasValue)
                 {
                     totalProgresses += progress.Value;

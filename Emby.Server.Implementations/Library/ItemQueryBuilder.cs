@@ -19,22 +19,22 @@ namespace Emby.Server.Implementations.Library
     public class ItemQueryBuilder : IItemQueryBuilder
     {
         private readonly IItemRepository _itemRepository;
-        private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IUserViewManager _userViewManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemQueryBuilder"/> class.
         /// </summary>
         /// <param name="itemRepositry">The item service.</param>
-        /// <param name="libraryRootFolderManager">The library root folder manager.</param>
+        /// <param name="virtualFolderManager">The virtual folder manager.</param>
         /// <param name="userViewManager">The user view manager.</param>
         public ItemQueryBuilder(
             IItemRepository itemRepositry,
-            ILibraryRootFolderManager libraryRootFolderManager,
+            IVirtualFolderManager virtualFolderManager,
             IUserViewManager userViewManager)
         {
             _itemRepository = itemRepositry;
-            _libraryRootFolderManager = libraryRootFolderManager;
+            _virtualFolderManager = virtualFolderManager;
             _userViewManager = userViewManager;
         }
 
@@ -103,7 +103,7 @@ namespace Emby.Server.Implementations.Library
                 if (user is not null && !string.IsNullOrEmpty(view.ViewType) && UserView.IsEligibleForGrouping(view.ViewType)
                     && user.GetPreference(PreferenceKind.GroupedFolders).Length > 0)
                 {
-                    return _libraryRootFolderManager.GetUserRootFolder()
+                    return _virtualFolderManager.GetUserRootFolder()
                         .GetChildren(user, true)
                         .OfType<CollectionFolder>()
                         .Where(i => string.IsNullOrEmpty(i.CollectionType) || string.Equals(i.CollectionType, view.ViewType, StringComparison.OrdinalIgnoreCase))

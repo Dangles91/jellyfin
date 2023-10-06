@@ -43,9 +43,9 @@ namespace Emby.Dlna.ContentDirectory
 
         private readonly IUserDataManager _userDataManager;
         private readonly User _user;
-        private readonly IUserViewManager _userViewManager;
         private readonly ITVSeriesManager _tvSeriesManager;
         private readonly IItemService _itemService;
+        private readonly ILatestItemsService _latestItemsService;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly IItemQueryService _itemQueryService;
         private readonly int _systemUpdateId;
@@ -67,10 +67,10 @@ namespace Emby.Dlna.ContentDirectory
         /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="localization">The <see cref="ILocalizationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        /// <param name="userViewManager">The <see cref="IUserViewManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="itemService">The instance of <see cref="IItemService"/> for use with the <see cref="ControlHandler"/> instance.</param>
+        /// <param name="latestItemsService">latest item service.</param>
         /// <param name="libraryRootFolderManager">The instance of <see cref="ILibraryRootFolderManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="itemQueryService">The instance of <see cref="IItemQueryService"/> for use with the <see cref="ControlHandler"/> instance.</param>
         public ControlHandler(
@@ -85,10 +85,10 @@ namespace Emby.Dlna.ContentDirectory
             IServerConfigurationManager config,
             ILocalizationManager localization,
             IMediaSourceManager mediaSourceManager,
-            IUserViewManager userViewManager,
             IMediaEncoder mediaEncoder,
             ITVSeriesManager tvSeriesManager,
             IItemService itemService,
+            ILatestItemsService latestItemsService,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemQueryService itemQueryService)
             : base(config, logger)
@@ -96,9 +96,9 @@ namespace Emby.Dlna.ContentDirectory
             _userDataManager = userDataManager;
             _user = user;
             _systemUpdateId = systemUpdateId;
-            _userViewManager = userViewManager;
             _tvSeriesManager = tvSeriesManager;
             _itemService = itemService;
+            _latestItemsService = latestItemsService;
             _libraryRootFolderManager = libraryRootFolderManager;
             _itemQueryService = itemQueryService;
             _profile = profile;
@@ -1044,7 +1044,7 @@ namespace Emby.Dlna.ContentDirectory
         {
             query.OrderBy = Array.Empty<(string, SortOrder)>();
 
-            var items = _userViewManager.GetLatestItems(
+            var items = _latestItemsService.GetLatestItems(
                 new LatestItemsQuery
                 {
                     // User cannot be null here as the caller has set it

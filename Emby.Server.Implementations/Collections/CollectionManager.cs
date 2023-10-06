@@ -28,7 +28,7 @@ namespace Emby.Server.Implementations.Collections
         private readonly IFileSystem _fileSystem;
         private readonly ILibraryMonitor _iLibraryMonitor;
         private readonly ILogger<CollectionManager> _logger;
-        private readonly IProviderManager _providerManager;
+        private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
         private readonly IItemService _itemService;
         private readonly ILocalizationManager _localizationManager;
@@ -44,7 +44,7 @@ namespace Emby.Server.Implementations.Collections
         /// <param name="fileSystem">The filesystem.</param>
         /// <param name="iLibraryMonitor">The library monitor.</param>
         /// <param name="loggerFactory">The logger factory.</param>
-        /// <param name="providerManager">The provider manager.</param>
+        /// <param name="itemRefreshTaskManager">The item refresh task manager.</param>
         /// <param name="libraryRootFolderManager">The root folder manager.</param>
         /// <param name="itemService">The item service.</param>
         public CollectionManager(
@@ -54,14 +54,14 @@ namespace Emby.Server.Implementations.Collections
             IFileSystem fileSystem,
             ILibraryMonitor iLibraryMonitor,
             ILoggerFactory loggerFactory,
-            IProviderManager providerManager,
+            IItemRefreshTaskManager itemRefreshTaskManager,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemService itemService)
         {
             _fileSystem = fileSystem;
             _iLibraryMonitor = iLibraryMonitor;
             _logger = loggerFactory.CreateLogger<CollectionManager>();
-            _providerManager = providerManager;
+            _itemRefreshTaskManager = itemRefreshTaskManager;
             _libraryRootFolderManager = libraryRootFolderManager;
             _itemService = itemService;
             _localizationManager = localizationManager;
@@ -187,7 +187,7 @@ namespace Emby.Server.Implementations.Collections
                 }
                 else
                 {
-                    _providerManager.QueueRefresh(collection.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
+                    _itemRefreshTaskManager.QueueRefresh(collection.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
                 }
 
                 CollectionCreated?.Invoke(this, new CollectionCreatedEventArgs
@@ -255,7 +255,7 @@ namespace Emby.Server.Implementations.Collections
                 await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
 
                 refreshOptions.ForceSave = true;
-                _providerManager.QueueRefresh(collection.Id, refreshOptions, RefreshPriority.High);
+                _itemRefreshTaskManager.QueueRefresh(collection.Id, refreshOptions, RefreshPriority.High);
 
                 if (fireEvent)
                 {
@@ -301,7 +301,7 @@ namespace Emby.Server.Implementations.Collections
             }
 
             await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
-            _providerManager.QueueRefresh(
+            _itemRefreshTaskManager.QueueRefresh(
                 collection.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                 {

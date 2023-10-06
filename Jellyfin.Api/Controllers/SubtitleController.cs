@@ -42,9 +42,9 @@ public class SubtitleController : BaseJellyfinApiController
     private readonly ISubtitleManager _subtitleManager;
     private readonly ISubtitleEncoder _subtitleEncoder;
     private readonly IMediaSourceManager _mediaSourceManager;
-    private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
     private readonly IItemService _itemService;
+    private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
     private readonly ILogger<SubtitleController> _logger;
 
     /// <summary>
@@ -54,27 +54,27 @@ public class SubtitleController : BaseJellyfinApiController
     /// <param name="subtitleManager">Instance of <see cref="ISubtitleManager"/> interface.</param>
     /// <param name="subtitleEncoder">Instance of <see cref="ISubtitleEncoder"/> interface.</param>
     /// <param name="mediaSourceManager">Instance of <see cref="IMediaSourceManager"/> interface.</param>
-    /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
     /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
+    /// <param name="itemRefreshTaskManager">Instance of <see cref="IItemRefreshTaskManager"/> interface.</param>
     /// <param name="logger">Instance of <see cref="ILogger{SubtitleController}"/> interface.</param>
     public SubtitleController(
         IServerConfigurationManager serverConfigurationManager,
         ISubtitleManager subtitleManager,
         ISubtitleEncoder subtitleEncoder,
         IMediaSourceManager mediaSourceManager,
-        IProviderManager providerManager,
         IFileSystem fileSystem,
         IItemService itemService,
+        IItemRefreshTaskManager itemRefreshTaskManager,
         ILogger<SubtitleController> logger)
     {
         _serverConfigurationManager = serverConfigurationManager;
         _subtitleManager = subtitleManager;
         _subtitleEncoder = subtitleEncoder;
         _mediaSourceManager = mediaSourceManager;
-        _providerManager = providerManager;
         _fileSystem = fileSystem;
         _itemService = itemService;
+        _itemRefreshTaskManager = itemRefreshTaskManager;
         _logger = logger;
     }
 
@@ -147,7 +147,7 @@ public class SubtitleController : BaseJellyfinApiController
             await _subtitleManager.DownloadSubtitles(video, subtitleId, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            _providerManager.QueueRefresh(video.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
+            _itemRefreshTaskManager.QueueRefresh(video.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
         }
         catch (Exception ex)
         {
@@ -419,7 +419,7 @@ public class SubtitleController : BaseJellyfinApiController
                     IsHearingImpaired = body.IsHearingImpaired,
                     Stream = memoryStream
                 }).ConfigureAwait(false);
-            _providerManager.QueueRefresh(video.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
+            _itemRefreshTaskManager.QueueRefresh(video.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
 
             return NoContent();
         }

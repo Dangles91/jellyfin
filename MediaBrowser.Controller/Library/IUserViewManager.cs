@@ -29,13 +29,5 @@ namespace MediaBrowser.Controller.Library
         /// <param name="sortName">Sort to use.</param>
         /// <returns>User view.</returns>
         UserView GetUserSubView(Guid parentId, string type, string localizationKey, string sortName);
-
-        /// <summary>
-        /// Gets latest items.
-        /// </summary>
-        /// <param name="request">Query to use.</param>
-        /// <param name="options">Options to use.</param>
-        /// <returns>Set of items.</returns>
-        List<Tuple<BaseItem, List<BaseItem>>> GetLatestItems(LatestItemsQuery request, DtoOptions options);
     }
 }

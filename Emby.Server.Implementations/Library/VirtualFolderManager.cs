@@ -40,6 +40,7 @@ namespace Emby.Server.Implementations.Library
         private readonly ITaskManager _taskManager;
         private readonly IXmlSerializer _xmlSerializer;
         private readonly ILogger<VirtualFolderManager> _logger;
+        private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VirtualFolderManager"/> class.
@@ -50,6 +51,7 @@ namespace Emby.Server.Implementations.Library
         /// <param name="configurationManager">Config manager.</param>
         /// <param name="libraryRootFolderManager">The library root folder manager.</param>
         /// <param name="logger">The logger.</param>
+        /// <param name="itemRefreshTaskManager">The refresh task manager.</param>
         /// <param name="taskManager">The task manager.</param>
         public VirtualFolderManager(
             ILibraryMonitorOrchestrator libraryMonitorOrchestrator,
@@ -58,6 +60,7 @@ namespace Emby.Server.Implementations.Library
             IServerConfigurationManager configurationManager,
             ILibraryRootFolderManager libraryRootFolderManager,
             ILogger<VirtualFolderManager> logger,
+            IItemRefreshTaskManager itemRefreshTaskManager,
             ITaskManager taskManager)
         {
             _libraryMonitorOrchestrator = libraryMonitorOrchestrator;
@@ -66,7 +69,20 @@ namespace Emby.Server.Implementations.Library
             _configurationManager = configurationManager;
             _libraryRootFolderManager = libraryRootFolderManager;
             _logger = logger;
+            _itemRefreshTaskManager = itemRefreshTaskManager;
             _taskManager = taskManager;
+        }
+
+        /// <inheritdoc/>
+        public AggregateFolder GetRootFolder()
+        {
+            return _libraryRootFolderManager.GetRootFolder();
+        }
+
+        /// <inheritdoc/>
+        public Folder GetUserRootFolder()
+        {
+            return _libraryRootFolderManager.GetRootFolder();
         }
 
         /// <summary>
@@ -78,6 +94,7 @@ namespace Emby.Server.Implementations.Library
             return GetVirtualFolders(false);
         }
 
+        /// <inheritdoc/>
         public List<VirtualFolderInfo> GetVirtualFolders(bool includeRefreshState)
         {
             _logger.LogDebug("Getting topLibraryFolders");
@@ -85,12 +102,11 @@ namespace Emby.Server.Implementations.Library
 
             _logger.LogDebug("Getting refreshQueue");
 
-            // TODO: move this out of ProviderManager.
-            var refreshQueue = includeRefreshState ? ProviderManager.GetRefreshQueue() : null;
+            var refreshQueue = includeRefreshState ? _itemRefreshTaskManager.GetRefreshQueue() : null;
 
             return _fileSystem.GetDirectoryPaths(_configurationManager.ApplicationPaths.DefaultUserViewsPath)
-                .Select(dir => GetVirtualFolderInfo(dir, topLibraryFolders, refreshQueue))
-                .ToList();
+                .Select(dir => GetVirtualFolderInfo(dir, topLibraryFolders, refreshQueue!))
+                .ToList()!;
         }
 
         private VirtualFolderInfo? GetVirtualFolderInfo(string dir, List<BaseItem> allCollectionFolders, HashSet<Guid> refreshQueue)
@@ -387,6 +403,7 @@ namespace Emby.Server.Implementations.Library
             _xmlSerializer.SerializeToFile(clone, GetLibraryOptionsPath(path));
         }
 
+        /// <inheritdoc/>
         public void AddMediaPath(string virtualFolderName, MediaPathInfo mediaPath)
         {
             AddMediaPathInternal(virtualFolderName, mediaPath, true);
@@ -440,6 +457,7 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
+        /// <inheritdoc/>
         public async Task RemoveVirtualFolder(string name, bool refreshLibrary)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -571,7 +589,7 @@ namespace Emby.Server.Implementations.Library
             var topLibraryFolders = _libraryRootFolderManager.GetUserRootFolder().Children.ToList();
             var info = GetVirtualFolderInfo(virtualFolderPath, topLibraryFolders, null!);
 
-            if (info.Locations.Length > 0 && info.Locations.Length != options.PathInfos.Length)
+            if (info!.Locations.Length > 0 && info.Locations.Length != options.PathInfos.Length)
             {
                 var list = options.PathInfos.ToList();
 

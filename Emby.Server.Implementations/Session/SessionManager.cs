@@ -80,7 +80,7 @@ namespace Emby.Server.Implementations.Session
             IServerApplicationHost appHost,
             IDeviceManager deviceManager,
             IMediaSourceManager mediaSourceManager,
-            IHostApplicationLifetime hostApplicationLifetime)
+            IHostApplicationLifetime hostApplicationLifetime,
             IItemQueryService itemQueryService)
         {
             _logger = logger;

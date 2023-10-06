@@ -153,7 +153,6 @@ namespace Emby.Server.Implementations
             LoggerFactory = loggerFactory;
             _startupOptions = options;
             _startupConfig = startupConfig;
-            _fileSystemManager = new ManagedFileSystem(LoggerFactory.CreateLogger<ManagedFileSystem>(), applicationPaths);
 
             Logger = LoggerFactory.CreateLogger<ApplicationHost>();
             _deviceId = new DeviceId(ApplicationPaths, LoggerFactory);
@@ -534,6 +533,7 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<ILibraryItemIdGenerator, Md5LibraryItemIdGenerator>();
             serviceCollection.AddSingleton<ILibraryViewService, LibraryViewService>();
             serviceCollection.AddSingleton<ILibraryRootFolderManager, LibraryRootFolderManager>();
+            serviceCollection.AddSingleton<ILibraryMonitorOrchestrator, LibraryMonitorOrchestrator>();
             serviceCollection.AddSingleton<IVirtualFolderManager, VirtualFolderManager>();
             serviceCollection.AddSingleton<IItemResolveArgsFactory, ItemResolveArgsFactory>();
             serviceCollection.AddSingleton<IResolverIgnoreRulesProvider, ResolverIgnoreRulesProvider>();
@@ -544,7 +544,10 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IItemService, ItemService>();
             serviceCollection.AddSingleton<IItemContentTypeProvider, ItemContentTypeProvider>();
             serviceCollection.AddSingleton<IUserViewBuilder, UserViewBuilder>();
+            serviceCollection.AddSingleton<IItemRefreshTaskManager, ItemRefreshTaskManager>();
+            serviceCollection.AddSingleton<IItemRefresher, ItemRefresher>();
             serviceCollection.AddSingleton<IVirtualFolderManager, VirtualFolderManager>();
+            serviceCollection.AddSingleton<ILatestItemsService, LatestItemsService>();
             serviceCollection.AddSingleton<FileRefresherFactory, FileRefresherFactory>();
 
             serviceCollection.AddSingleton<NamingOptions>();
@@ -681,10 +684,9 @@ namespace Emby.Server.Implementations
             BaseItem.ConfigureDependencies(
                 Resolve<ILogger<BaseItem>>(),
                 Resolve<ILibraryManager>(),
-                ConfigurationManager,
-                Resolve<IProviderManager>(),
+                Resolve<IServerConfigurationManager>(),
                 Resolve<ILocalizationManager>(),
-                _fileSystemManager,
+                Resolve<IFileSystem>(),
                 Resolve<IUserDataManager>(),
                 Resolve<IChannelManager>(),
                 Resolve<IMediaSourceManager>(),
@@ -697,7 +699,9 @@ namespace Emby.Server.Implementations
                 Resolve<IUserViewBuilder>(),
                 Resolve<IItemQueryService>(),
                 Resolve<ILibraryItemIdGenerator>(),
-                Resolve<IItemResolveArgsFactory>());
+                Resolve<IItemResolveArgsFactory>(),
+                Resolve<IItemRefreshTaskManager>(),
+                Resolve<IItemRefresher>());
 
             Video.LiveTvManager = Resolve<ILiveTvManager>();
             Folder.UserViewManager = Resolve<IUserViewManager>();

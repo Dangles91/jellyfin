@@ -64,6 +64,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
         private readonly IProviderManager _providerManager;
         private readonly IMediaEncoder _mediaEncoder;
         private readonly IItemService _itemService;
+        private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
         private readonly IItemQueryService _itemQueryService;
         private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly IMediaSourceManager _mediaSourceManager;
@@ -93,6 +94,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             IProviderManager providerManager,
             IMediaEncoder mediaEncoder,
             IItemService itemService,
+            IItemRefreshTaskManager itemRefreshTaskManager,
             IItemQueryService itemQueryService,
             IVirtualFolderManager virtualFolderManager)
         {
@@ -108,6 +110,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             _providerManager = providerManager;
             _mediaEncoder = mediaEncoder;
             _itemService = itemService;
+            _itemRefreshTaskManager = itemRefreshTaskManager;
             _itemQueryService = itemQueryService;
             _virtualFolderManager = virtualFolderManager;
             _liveTvManager = (LiveTvManager)liveTvManager;
@@ -1423,7 +1426,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             {
                 _logger.LogInformation("Refreshing recording parent {Path}", item.Path);
 
-                _providerManager.QueueRefresh(
+                _itemRefreshTaskManager.QueueRefresh(
                     item.Id,
                     new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                     {

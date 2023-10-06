@@ -32,35 +32,32 @@ namespace Emby.Server.Implementations.Playlists
 {
     public class PlaylistManager : IPlaylistManager
     {
-        private readonly ILibraryManager _libraryManager;
         private readonly IFileSystem _fileSystem;
         private readonly ILibraryMonitor _iLibraryMonitor;
         private readonly ILogger<PlaylistManager> _logger;
         private readonly IUserManager _userManager;
-        private readonly IProviderManager _providerManager;
         private readonly IConfiguration _appConfig;
         private readonly ILibraryRootFolderManager _libraryRootFolderManager;
+        private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
         private readonly IItemService _itemService;
 
         public PlaylistManager(
-            ILibraryManager libraryManager,
             IFileSystem fileSystem,
             ILibraryMonitor iLibraryMonitor,
             ILogger<PlaylistManager> logger,
             IUserManager userManager,
-            IProviderManager providerManager,
             IConfiguration appConfig,
             ILibraryRootFolderManager libraryRootFolderManager,
+            IItemRefreshTaskManager itemRefreshTaskManager,
             IItemService itemService)
         {
-            _libraryManager = libraryManager;
             _fileSystem = fileSystem;
             _iLibraryMonitor = iLibraryMonitor;
             _logger = logger;
             _userManager = userManager;
-            _providerManager = providerManager;
             _appConfig = appConfig;
             _libraryRootFolderManager = libraryRootFolderManager;
+            _itemRefreshTaskManager = itemRefreshTaskManager;
             _itemService = itemService;
         }
 
@@ -245,7 +242,7 @@ namespace Emby.Server.Implementations.Playlists
             }
 
             // Refresh playlist metadata
-            _providerManager.QueueRefresh(
+            _itemRefreshTaskManager.QueueRefresh(
                 playlist.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                 {
@@ -278,7 +275,7 @@ namespace Emby.Server.Implementations.Playlists
                 SavePlaylistFile(playlist);
             }
 
-            _providerManager.QueueRefresh(
+            _itemRefreshTaskManager.QueueRefresh(
                 playlist.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                 {

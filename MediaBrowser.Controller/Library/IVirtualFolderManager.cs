@@ -115,5 +115,17 @@ namespace MediaBrowser.Controller.Library
         /// <param name="virtualFolderName">The name of the virtual folder to update.</param>
         /// <param name="mediaPath">The media path to remove.</param>
         void RemoveMediaPath(string virtualFolderName, string mediaPath);
+
+        /// <summary>
+        /// Get the root folder. Create if it doesn't exist.
+        /// </summary>
+        /// <returns>The library root folder instance.</returns>
+        AggregateFolder GetRootFolder();
+
+        /// <summary>
+        /// Get the user root folder.
+        /// </summary>
+        /// <returns>The user root folder instance.</returns>
+        Folder GetUserRootFolder();
     }
 }

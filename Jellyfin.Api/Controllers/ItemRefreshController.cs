@@ -18,24 +18,24 @@ namespace Jellyfin.Api.Controllers;
 [Authorize(Policy = Policies.RequiresElevation)]
 public class ItemRefreshController : BaseJellyfinApiController
 {
-    private readonly IProviderManager _providerManager;
     private readonly IItemService _itemService;
     private readonly IFileSystem _fileSystem;
+    private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemRefreshController"/> class.
     /// </summary>
-    /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
     /// <param name="itemService">Instance of <see cref="IItemService"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
+    /// <param name="itemRefreshTaskManager">Instance of <see cref="IItemRefreshTaskManager"/> interface.</param>
     public ItemRefreshController(
-        IProviderManager providerManager,
         IItemService itemService,
-        IFileSystem fileSystem)
+        IFileSystem fileSystem,
+        IItemRefreshTaskManager itemRefreshTaskManager)
     {
-        _providerManager = providerManager;
         _itemService = itemService;
         _fileSystem = fileSystem;
+        _itemRefreshTaskManager = itemRefreshTaskManager;
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public class ItemRefreshController : BaseJellyfinApiController
             IsAutomated = false
         };
 
-        _providerManager.QueueRefresh(item.Id, refreshOptions, RefreshPriority.High);
+        _itemRefreshTaskManager.QueueRefresh(item.Id, refreshOptions, RefreshPriority.High);
         return NoContent();
     }
 }

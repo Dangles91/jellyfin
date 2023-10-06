@@ -30,8 +30,8 @@ namespace Emby.Server.Implementations.EntryPoints
     {
         private readonly ILibraryManager _libraryManager;
         private readonly IServerConfigurationManager _configurationManager;
-        private readonly IProviderManager _providerManager;
         private readonly IItemService _itemService;
+        private readonly IItemRefreshTaskManager _refreshTaskManager;
         private readonly IVirtualFolderManager _virtualFolderManager;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
@@ -55,8 +55,8 @@ namespace Emby.Server.Implementations.EntryPoints
             ISessionManager sessionManager,
             IUserManager userManager,
             ILogger<LibraryChangedNotifier> logger,
-            IProviderManager providerManager,
             IItemService itemService,
+            IItemRefreshTaskManager refreshTaskManager,
             IVirtualFolderManager virtualFolderManager)
         {
             _libraryManager = libraryManager;
@@ -64,8 +64,8 @@ namespace Emby.Server.Implementations.EntryPoints
             _sessionManager = sessionManager;
             _userManager = userManager;
             _logger = logger;
-            _providerManager = providerManager;
             _itemService = itemService;
+            _refreshTaskManager = refreshTaskManager;
             _virtualFolderManager = virtualFolderManager;
         }
 
@@ -81,9 +81,9 @@ namespace Emby.Server.Implementations.EntryPoints
             _itemService.ItemUpdated += OnLibraryItemUpdated;
             _itemService.ItemRemoved += OnLibraryItemRemoved;
 
-            _providerManager.RefreshCompleted += OnProviderRefreshCompleted;
-            _providerManager.RefreshStarted += OnProviderRefreshStarted;
-            _providerManager.RefreshProgress += OnProviderRefreshProgress;
+            _refreshTaskManager.RefreshCompleted += OnProviderRefreshCompleted;
+            _refreshTaskManager.RefreshStarted += OnProviderRefreshStarted;
+            _refreshTaskManager.RefreshProgress += OnProviderRefreshProgress;
 
             return Task.CompletedTask;
         }
@@ -496,9 +496,9 @@ namespace Emby.Server.Implementations.EntryPoints
                 _itemService.ItemUpdated -= OnLibraryItemUpdated;
                 _itemService.ItemRemoved -= OnLibraryItemRemoved;
 
-                _providerManager.RefreshCompleted -= OnProviderRefreshCompleted;
-                _providerManager.RefreshStarted -= OnProviderRefreshStarted;
-                _providerManager.RefreshProgress -= OnProviderRefreshProgress;
+                _refreshTaskManager.RefreshCompleted -= OnProviderRefreshCompleted;
+                _refreshTaskManager.RefreshStarted -= OnProviderRefreshStarted;
+                _refreshTaskManager.RefreshProgress -= OnProviderRefreshProgress;
             }
         }
     }

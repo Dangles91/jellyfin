@@ -78,10 +78,10 @@ namespace Emby.Dlna.Main
             IMediaEncoder mediaEncoder,
             ISocketFactory socketFactory,
             INetworkManager networkManager,
-            IUserViewManager userViewManager,
             ITVSeriesManager tvSeriesManager,
             ILibraryRootFolderManager libraryRootFolderManager,
             IItemService itemService,
+            ILatestItemsService latestItemsService,
             IItemQueryService itemQueryService)
         {
             _config = config;
@@ -112,11 +112,11 @@ namespace Emby.Dlna.Main
                 httpClientFactory,
                 localizationManager,
                 mediaSourceManager,
-                userViewManager,
                 mediaEncoder,
                 tvSeriesManager,
                 libraryRootFolderManager,
                 itemService,
+                latestItemsService,
                 itemQueryService);
 
             ConnectionManager = new ConnectionManager.ConnectionManagerService(

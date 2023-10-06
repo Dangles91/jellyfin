@@ -25,7 +25,7 @@ namespace Emby.Server.Implementations.Library
         private readonly IServerConfigurationManager _serverConfigurationManager;
         private readonly ILibraryItemIdGenerator _libraryItemIdGenerator;
         private readonly IFileSystem _fileSystem;
-        private readonly IProviderManager _providerManager;
+        private readonly IItemRefreshTaskManager _refreshTaskManager;
         private readonly TimeSpan _viewRefreshInterval = TimeSpan.FromHours(24);
 
         /// <summary>
@@ -35,19 +35,19 @@ namespace Emby.Server.Implementations.Library
         /// <param name="serverConfigurationManager">The server configuration manager.</param>
         /// <param name="libraryItemIdGenerator">The library item id generator.</param>
         /// <param name="fileSystem">The file system.</param>
-        /// <param name="providerManager">The provider manager.</param>
+        /// <param name="refreshTaskManager">The item refresh task manager.</param>
         public LibraryViewService(
             IItemService itemService,
             IServerConfigurationManager serverConfigurationManager,
             ILibraryItemIdGenerator libraryItemIdGenerator,
             IFileSystem fileSystem,
-            IProviderManager providerManager)
+            IItemRefreshTaskManager refreshTaskManager)
         {
             _itemService = itemService;
             _serverConfigurationManager = serverConfigurationManager;
             _libraryItemIdGenerator = libraryItemIdGenerator;
             _fileSystem = fileSystem;
-            _providerManager = providerManager;
+            _refreshTaskManager = refreshTaskManager;
         }
 
         /// <inheritdoc/>
@@ -102,8 +102,8 @@ namespace Emby.Server.Implementations.Library
 
             if (refresh)
             {
-                // TODO: Dangles: remove this from provider manager and don't pass around the file system
-                _providerManager.QueueRefresh(
+                // TODO: don't pass around the file system
+                _refreshTaskManager.QueueRefresh(
                     item.Id,
                     new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                     {
@@ -180,7 +180,7 @@ namespace Emby.Server.Implementations.Library
 
             if (refresh)
             {
-                _providerManager.QueueRefresh(
+                _refreshTaskManager.QueueRefresh(
                     item.Id,
                     new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                     {
@@ -242,7 +242,7 @@ namespace Emby.Server.Implementations.Library
             if (refresh)
             {
                 item.UpdateToRepositoryAsync(ItemUpdateType.MetadataImport, CancellationToken.None).GetAwaiter().GetResult();
-                _providerManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.Normal);
+                _refreshTaskManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.Normal);
             }
 
             return item;
@@ -300,7 +300,7 @@ namespace Emby.Server.Implementations.Library
 
             if (refresh)
             {
-                _providerManager.QueueRefresh(
+                _refreshTaskManager.QueueRefresh(
                     item.Id,
                     new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                     {

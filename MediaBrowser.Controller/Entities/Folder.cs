@@ -236,7 +236,7 @@ namespace MediaBrowser.Controller.Entities
 
         public override double? GetRefreshProgress()
         {
-            return ProviderManager.GetRefreshProgress(Id);
+            return ItemRefreshTaskManager.GetRefreshProgress(Id);
         }
 
         public Task ValidateChildren(IProgress<double> progress, CancellationToken cancellationToken)
@@ -296,7 +296,7 @@ namespace MediaBrowser.Controller.Entities
         {
             if (recursive)
             {
-                ProviderManager.OnRefreshStart(this);
+                ItemRefreshTaskManager.OnRefreshStart(this);
             }
 
             try
@@ -307,7 +307,7 @@ namespace MediaBrowser.Controller.Entities
             {
                 if (recursive)
                 {
-                    ProviderManager.OnRefreshComplete(this);
+                    ItemRefreshTaskManager.OnRefreshComplete(this);
                 }
             }
         }
@@ -337,7 +337,7 @@ namespace MediaBrowser.Controller.Entities
 
                 if (recursive)
                 {
-                    ProviderManager.OnRefreshProgress(this, ProgressHelpers.RetrievedChildren);
+                    ItemRefreshTaskManager.OnRefreshProgress(this, ProgressHelpers.RetrievedChildren);
                 }
 
                 // Build a dictionary of the current children we have now by Id so we can compare quickly and easily
@@ -407,7 +407,7 @@ namespace MediaBrowser.Controller.Entities
 
             if (recursive)
             {
-                ProviderManager.OnRefreshProgress(this, ProgressHelpers.UpdatedChildItems);
+                ItemRefreshTaskManager.OnRefreshProgress(this, ProgressHelpers.UpdatedChildItems);
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -423,7 +423,7 @@ namespace MediaBrowser.Controller.Entities
 
                     progress.Report(percent);
 
-                    ProviderManager.OnRefreshProgress(folder, percent);
+                    ItemRefreshTaskManager.OnRefreshProgress(folder, percent);
                 });
 
                 if (validChildrenNeedGeneration)
@@ -441,7 +441,7 @@ namespace MediaBrowser.Controller.Entities
 
                 if (recursive)
                 {
-                    ProviderManager.OnRefreshProgress(this, ProgressHelpers.ScannedSubfolders);
+                    ItemRefreshTaskManager.OnRefreshProgress(this, ProgressHelpers.ScannedSubfolders);
                 }
 
                 var container = this as IMetadataContainer;
@@ -457,7 +457,7 @@ namespace MediaBrowser.Controller.Entities
 
                     if (recursive)
                     {
-                        ProviderManager.OnRefreshProgress(folder, percent);
+                        ItemRefreshTaskManager.OnRefreshProgress(folder, percent);
                     }
                 });
 

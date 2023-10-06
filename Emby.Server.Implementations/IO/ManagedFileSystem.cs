@@ -16,10 +16,6 @@ namespace Emby.Server.Implementations.IO
     /// </summary>
     public class ManagedFileSystem : IFileSystem
     {
-        private readonly ILogger<ManagedFileSystem> _logger;
-        private readonly IServerApplicationPaths _applicationPaths;
-        private readonly List<IShortcutHandler> _shortcutHandlers = new List<IShortcutHandler>();
-        private readonly string _tempPath;
         private static readonly bool _isEnvironmentCaseInsensitive = OperatingSystem.IsWindows();
         private static readonly char[] _invalidPathCharacters =
         {
@@ -31,6 +27,7 @@ namespace Emby.Server.Implementations.IO
         };
 
         private readonly ILogger<ManagedFileSystem> _logger;
+        private readonly IServerApplicationPaths _applicationPaths;
         private readonly List<IShortcutHandler> _shortcutHandlers;
         private readonly string _tempPath;
 
@@ -38,11 +35,11 @@ namespace Emby.Server.Implementations.IO
         /// Initializes a new instance of the <see cref="ManagedFileSystem"/> class.
         /// </summary>
         /// <param name="logger">The <see cref="ILogger"/> instance to use.</param>
-        /// <param name="applicationPaths">The <see cref="IApplicationPaths"/> instance to use.</param>
+        /// <param name="applicationPaths">The <see cref="IServerApplicationPaths"/> instance to use.</param>
         /// <param name="shortcutHandlers">the <see cref="IShortcutHandler"/>'s to use.</param>
         public ManagedFileSystem(
             ILogger<ManagedFileSystem> logger,
-            IApplicationPaths applicationPaths,
+            IServerApplicationPaths applicationPaths,
             IEnumerable<IShortcutHandler> shortcutHandlers)
         {
             _logger = logger;

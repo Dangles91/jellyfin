@@ -29,6 +29,7 @@ public class ItemLookupController : BaseJellyfinApiController
     private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
     private readonly IItemService _itemService;
+    private readonly IItemRefresher _itemRefresher;
     private readonly ILogger<ItemLookupController> _logger;
 
     /// <summary>
@@ -37,16 +38,19 @@ public class ItemLookupController : BaseJellyfinApiController
     /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemRefresher">Instance of the <see cref="IItemRefresher"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{ItemLookupController}"/> interface.</param>
     public ItemLookupController(
         IProviderManager providerManager,
         IFileSystem fileSystem,
         IItemService itemService,
+        IItemRefresher itemRefresher,
         ILogger<ItemLookupController> logger)
     {
         _providerManager = providerManager;
         _fileSystem = fileSystem;
         _itemService = itemService;
+        _itemRefresher = itemRefresher;
         _logger = logger;
     }
 
@@ -254,7 +258,7 @@ public class ItemLookupController : BaseJellyfinApiController
 
         // Since the refresh process won't erase provider Ids, we need to set this explicitly now.
         item.ProviderIds = searchResult.ProviderIds;
-        await _providerManager.RefreshFullItem(
+        await _itemRefresher.RefreshFullItem(
             item,
             new MetadataRefreshOptions(new DirectoryService(_fileSystem))
             {

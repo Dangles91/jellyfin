@@ -25,8 +25,8 @@ public class CleanupCollectionAndPlaylistPathsTask : IScheduledTask
     private readonly ILocalizationManager _localization;
     private readonly ICollectionManager _collectionManager;
     private readonly IPlaylistManager _playlistManager;
+    private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
     private readonly ILogger<CleanupCollectionAndPlaylistPathsTask> _logger;
-    private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
 
     /// <summary>
@@ -35,22 +35,22 @@ public class CleanupCollectionAndPlaylistPathsTask : IScheduledTask
     /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
     /// <param name="collectionManager">Instance of the <see cref="ICollectionManager"/> interface.</param>
     /// <param name="playlistManager">Instance of the <see cref="IPlaylistManager"/> interface.</param>
+    /// <param name="itemRefreshTaskManager">Instance of the <see cref="IItemRefreshTaskManager"/> interface.</param>
     /// <param name="logger">The logger.</param>
-    /// <param name="providerManager">The provider manager.</param>
     /// <param name="fileSystem">The filesystem.</param>
     public CleanupCollectionAndPlaylistPathsTask(
         ILocalizationManager localization,
         ICollectionManager collectionManager,
         IPlaylistManager playlistManager,
+        IItemRefreshTaskManager itemRefreshTaskManager,
         ILogger<CleanupCollectionAndPlaylistPathsTask> logger,
-        IProviderManager providerManager,
         IFileSystem fileSystem)
     {
         _localization = localization;
         _collectionManager = collectionManager;
         _playlistManager = playlistManager;
+        _itemRefreshTaskManager = itemRefreshTaskManager;
         _logger = logger;
-        _providerManager = providerManager;
         _fileSystem = fileSystem;
     }
 
@@ -128,7 +128,7 @@ public class CleanupCollectionAndPlaylistPathsTask : IScheduledTask
             folder.LinkedChildren = folder.LinkedChildren.Except(itemsToRemove).ToArray();
             folder.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
 
-            _providerManager.QueueRefresh(
+            _itemRefreshTaskManager.QueueRefresh(
                 folder.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                 {

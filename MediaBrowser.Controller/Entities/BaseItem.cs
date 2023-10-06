@@ -462,8 +462,6 @@ namespace MediaBrowser.Controller.Entities
 
         protected static IServerConfigurationManager ConfigurationManager { get; set; }
 
-        protected static IProviderManager ProviderManager { get; set; }
-
         protected static ILocalizationManager LocalizationManager { get; set; }
 
         protected static IFileSystem FileSystem { get; set; }
@@ -493,6 +491,10 @@ namespace MediaBrowser.Controller.Entities
         protected static ILibraryItemIdGenerator ItemIdGenerator { get; set; }
 
         protected static IItemResolveArgsFactory ItemResolveArgsFactory { get; set; }
+
+        protected static IItemRefreshTaskManager ItemRefreshTaskManager { get; set; }
+
+        protected static IItemRefresher ItemRefresher { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the forced sort.
@@ -798,7 +800,6 @@ namespace MediaBrowser.Controller.Entities
         /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
         /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
-        /// <param name="providerManager">Instance of the <see cref="IProviderManager"/> interface.</param>
         /// <param name="localizationManager">Instance of the <see cref="ILocalizationManager"/> interface.</param>
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
@@ -814,11 +815,12 @@ namespace MediaBrowser.Controller.Entities
         /// <param name="itemQueryService">Instance of the <see cref="IItemQueryService"/> interface.</param>
         /// <param name="libraryItemIdGenerator">Instance of the <see cref="ILibraryItemIdGenerator"/> interface.</param>
         /// <param name="itemResolveArgsFactory">Instance of the <see cref="IItemResolveArgsFactory"/> interface.</param>
+        /// <param name="itemRefreshTaskManager">Instance of the <see cref="IItemRefreshTaskManager"/> interface.</param>
+        /// <param name="itemRefresher">Instance of the <see cref="IItemRefresher"/> interface.</param>
         public static void ConfigureDependencies(
             ILogger<BaseItem> logger,
             ILibraryManager libraryManager,
             IServerConfigurationManager serverConfigurationManager,
-            IProviderManager providerManager,
             ILocalizationManager localizationManager,
             IFileSystem fileSystem,
             IUserDataManager userDataManager,
@@ -833,12 +835,13 @@ namespace MediaBrowser.Controller.Entities
             IUserViewBuilder userViewBuilder,
             IItemQueryService itemQueryService,
             ILibraryItemIdGenerator libraryItemIdGenerator,
-            IItemResolveArgsFactory itemResolveArgsFactory)
+            IItemResolveArgsFactory itemResolveArgsFactory,
+            IItemRefreshTaskManager itemRefreshTaskManager,
+            IItemRefresher itemRefresher)
         {
             Logger = logger;
             LibraryManager = libraryManager;
             ConfigurationManager = serverConfigurationManager;
-            ProviderManager = providerManager;
             LocalizationManager = localizationManager;
             FileSystem = fileSystem;
             UserDataManager = userDataManager;
@@ -853,6 +856,8 @@ namespace MediaBrowser.Controller.Entities
             ItemQueryService = itemQueryService;
             ItemIdGenerator = libraryItemIdGenerator;
             ItemResolveArgsFactory = itemResolveArgsFactory;
+            ItemRefresher = itemRefresher;
+            ItemRefreshTaskManager = itemRefreshTaskManager;
         }
 
         public virtual double GetDefaultPrimaryImageAspectRatio()
@@ -1358,7 +1363,7 @@ namespace MediaBrowser.Controller.Entities
                 }
                 : options;
 
-            return await ProviderManager.RefreshSingleItem(this, refreshOptions, cancellationToken).ConfigureAwait(false);
+            return await ItemRefresher.RefreshSingleItem(this, refreshOptions, cancellationToken).ConfigureAwait(false);
         }
 
         protected bool IsVisibleStandaloneInternal(User user, bool checkFolders)
@@ -1932,7 +1937,7 @@ namespace MediaBrowser.Controller.Entities
         /// </summary>
         public virtual void ChangedExternally()
         {
-            ProviderManager.QueueRefresh(Id, new MetadataRefreshOptions(new DirectoryService(FileSystem)), RefreshPriority.High);
+            ItemRefreshTaskManager.QueueRefresh(Id, new MetadataRefreshOptions(new DirectoryService(FileSystem)), RefreshPriority.High);
         }
 
         /// <summary>

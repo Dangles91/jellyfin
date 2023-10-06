@@ -36,6 +36,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IItemContentTypeProvider _itemContentTypeProvider;
     private readonly IItemService _itemService;
+    private readonly IItemRefreshTaskManager _itemRefreshTaskManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemUpdateController"/> class.
@@ -47,6 +48,7 @@ public class ItemUpdateController : BaseJellyfinApiController
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="itemContentTypeProvider">Instance of the <see cref="IItemContentTypeProvider"/> interface.</param>
     /// <param name="itemService">Instance of the <see cref="IItemService"/> interface.</param>
+    /// <param name="itemRefreshTaskManager">Instance of the <see cref="IItemRefreshTaskManager"/> interface.</param>
     public ItemUpdateController(
         IFileSystem fileSystem,
         ILibraryManager libraryManager,
@@ -54,7 +56,8 @@ public class ItemUpdateController : BaseJellyfinApiController
         ILocalizationManager localizationManager,
         IServerConfigurationManager serverConfigurationManager,
         IItemContentTypeProvider itemContentTypeProvider,
-        IItemService itemService)
+        IItemService itemService,
+        IItemRefreshTaskManager itemRefreshTaskManager)
     {
         _libraryManager = libraryManager;
         _providerManager = providerManager;
@@ -63,6 +66,7 @@ public class ItemUpdateController : BaseJellyfinApiController
         _serverConfigurationManager = serverConfigurationManager;
         _itemContentTypeProvider = itemContentTypeProvider;
         _itemService = itemService;
+        _itemRefreshTaskManager = itemRefreshTaskManager;
     }
 
     /// <summary>
@@ -125,7 +129,7 @@ public class ItemUpdateController : BaseJellyfinApiController
 
         if (displayOrderChanged)
         {
-            _providerManager.QueueRefresh(
+            _itemRefreshTaskManager.QueueRefresh(
                 series!.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem))
                 {
